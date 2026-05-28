@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import List
 import logging
 import traceback
 from datetime import datetime
@@ -8,6 +8,7 @@ from datetime import datetime
 from ..database import get_db
 from ..api.auth import get_current_user
 from ..core.company_isolation import get_current_user_company_id
+from ..core.exceptions import NotFoundError, ValidationError, AppError
 from ..services.inventory_service import get_products_by_company
 from ..services.supplier_service import get_suppliers_by_company
 from ..ml.inference.predictor import MLPredictor
@@ -19,7 +20,6 @@ from ..models.supplier_shipment import Supplier
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# Global predictor and insight engine instances
 predictor = MLPredictor()
 insight_engine = EnhancedInsightEngine(predictor)
 
@@ -27,226 +27,214 @@ insight_engine = EnhancedInsightEngine(predictor)
 @router.get("/demand-forecast/{product_id}")
 def get_demand_forecast(
     product_id: int,
-    date: str,  # Expected format: YYYY-MM-DD
+    date: str,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """
-    Get demand forecast for a specific product on a specific date
-    """
     company_id = get_current_user_company_id(db, current_user)
 
     try:
-        # Validate date format
         forecast_date = datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise ValidationError("Invalid date format. Use YYYY-MM-DD", field="date")
 
-        # Check if the product belongs to the user's company
-        product = db.query(Product).filter(Product.id == product_id, Product.company_id == company_id).first()
-        if not product:
-            raise HTTPException(status_code=404, detail="Product not found or does not belong to your company")
+    product = db.query(Product).filter(Product.id == product_id, Product.company_id == company_id).first()
+    if not product:
+        raise NotFoundError("Product", product_id)
 
-        # Get demand forecast
+    try:
         forecast = predictor.predict_demand(str(product_id), forecast_date)
         forecast_val = float(forecast)
 
-        # Store prediction in database
         prediction = Prediction(
             company_id=company_id,
             entity_type="product",
             entity_id=product_id,
             prediction_type="demand_forecast",
-            prediction_value=forecast_val
+            prediction_value=forecast_val,
         )
         db.add(prediction)
         db.commit()
 
-        return {
-            "product_id": product_id,
-            "forecast_date": date,
-            "predicted_demand": forecast_val
-        }
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+        return {"product_id": product_id, "forecast_date": date, "predicted_demand": forecast_val}
     except Exception as e:
-        logger.error(f"Error getting demand forecast: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error generating demand forecast")
+        logger.error(f"Error getting demand forecast: {e}")
+        raise AppError(code="ML_ERROR", message="Error generating demand forecast", status_code=500)
 
 
 @router.get("/inventory-risk/{product_id}")
 def get_inventory_risk(
     product_id: int,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """
-    Get inventory risk classification for a specific product
-    """
     company_id = get_current_user_company_id(db, current_user)
 
-    # Check if the product belongs to the user's company
     product = db.query(Product).filter(Product.id == product_id, Product.company_id == company_id).first()
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found or does not belong to your company")
+        raise NotFoundError("Product", product_id)
 
     try:
-        # Prepare product data for prediction
-        # Aggregate stock from all warehouses
         total_stock = sum(item.current_stock for item in product.inventory_items) if product.inventory_items else 0
-        
         product_data = {
-            'id': product.id,
-            'Availability': total_stock,
-            'Number of products sold': 0,  # Placeholder - would come from historical data
-            'Revenue generated': 0,  # Placeholder - would come from historical data
-            'Stock levels': total_stock,
-            'Lead times': 0,  # Placeholder - would come from supplier data
-            'Order quantities': 0,  # Placeholder - would come from order history
-            'Shipping costs': 0,  # Placeholder - would come from shipping data
-            'Price': product.unit_cost
+            "id": product.id,
+            "Availability": total_stock,
+            "Number of products sold": 0,
+            "Revenue generated": 0,
+            "Stock levels": total_stock,
+            "Lead times": 0,
+            "Order quantities": 0,
+            "Shipping costs": 0,
+            "Price": product.unit_cost,
         }
 
-        # Get inventory risk prediction
         risk_label, probas = predictor.predict_inventory_risk(product_data)
-        # Fix: Store max probability as value instead of label string (which breaks float column)
         risk_score = float(max(probas))
 
-        # Store prediction in database
         prediction = Prediction(
             company_id=company_id,
             entity_type="product",
             entity_id=product_id,
             prediction_type="inventory_risk",
-            prediction_value=risk_score
+            prediction_value=risk_score,
         )
         db.add(prediction)
         db.commit()
 
-        return {
-            "product_id": product_id,
-            "risk_label": risk_label,
-            "probabilities": [float(p) for p in probas]
-        }
+        return {"product_id": product_id, "risk_label": risk_label, "probabilities": [float(p) for p in probas]}
     except Exception as e:
-        logger.error(f"Error getting inventory risk: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error generating inventory risk assessment")
+        logger.error(f"Error getting inventory risk: {e}")
+        raise AppError(code="ML_ERROR", message="Error generating inventory risk assessment", status_code=500)
 
 
 @router.get("/supplier-delay-risk/{supplier_id}")
 def get_supplier_delay_risk(
     supplier_id: int,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """
-    Get delay risk prediction for a specific supplier
-    """
     company_id = get_current_user_company_id(db, current_user)
 
-    # Check if the supplier belongs to the user's company
     supplier = db.query(Supplier).filter(Supplier.id == supplier_id, Supplier.company_id == company_id).first()
     if not supplier:
-        raise HTTPException(status_code=404, detail="Supplier not found or does not belong to your company")
+        raise NotFoundError("Supplier", supplier_id)
 
     try:
-        # Prepare supplier data for prediction
         supplier_data = {
-            'id': supplier.id,
-            'Lead times': supplier.avg_lead_time or 0,
-            'Order quantities': 0,  # Placeholder - would come from order history
-            'Shipping costs': 0,  # Placeholder - would come from shipping data
-            'Price': 0,  # Placeholder - would come from order data
-            'Availability': 0,  # Placeholder - would come from inventory data
-            'Number of products sold': 0  # Placeholder - would come from sales data
+            "id": supplier.id,
+            "Lead times": supplier.avg_lead_time or 0,
+            "Order quantities": 0,
+            "Shipping costs": 0,
+            "Price": 0,
+            "Availability": 0,
+            "Number of products sold": 0,
         }
 
-        # Get supplier delay prediction
         delay_prediction, delay_probability = predictor.predict_supplier_delay(supplier_data)
-        # Fix: Cast numpy types to python native types
         delay_prob = float(delay_probability)
 
-        # Store prediction in database
         prediction = Prediction(
             company_id=company_id,
             entity_type="supplier",
             entity_id=supplier_id,
             prediction_type="delay_risk",
-            prediction_value=delay_prob
+            prediction_value=delay_prob,
+        )
+        db.add(prediction)
+        db.commit()
+
+        return {"supplier_id": supplier_id, "delay_risk": bool(delay_prediction), "delay_probability": delay_prob}
+    except Exception as e:
+        logger.error(f"Error getting supplier delay risk: {e}")
+        raise AppError(code="ML_ERROR", message="Error generating supplier delay risk assessment", status_code=500)
+
+
+@router.post("/cost-anomaly")
+def detect_cost_anomaly(
+    cost_data: dict,
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    company_id = get_current_user_company_id(db, current_user)
+
+    try:
+        anomaly_pred, anomaly_score = predictor.detect_cost_anomaly(cost_data)
+
+        prediction = Prediction(
+            company_id=company_id,
+            entity_type="cost",
+            entity_id=cost_data.get("id", 0),
+            prediction_type="cost_anomaly",
+            prediction_value=float(anomaly_score),
         )
         db.add(prediction)
         db.commit()
 
         return {
-            "supplier_id": supplier_id,
-            "delay_risk": bool(delay_prediction),
-            "delay_probability": float(delay_probability)
+            "is_anomaly": anomaly_pred == -1,
+            "anomaly_score": float(anomaly_score),
+            "prediction": int(anomaly_pred),
         }
+    except ValueError as e:
+        raise AppError(code="ML_ERROR", message=str(e), status_code=400)
     except Exception as e:
-        logger.error(f"Error getting supplier delay risk: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error generating supplier delay risk assessment")
+        logger.error(f"Error detecting cost anomaly: {e}")
+        raise AppError(code="ML_ERROR", message="Error detecting cost anomaly", status_code=500)
 
 
 @router.post("/run-analysis")
 def run_ml_analysis(
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """
-    Run a full ML analysis for the user's company and generate enhanced insights
-    """
     company_id = get_current_user_company_id(db, current_user)
 
     try:
-        # Get products for the company
         products = db.query(Product).filter(Product.company_id == company_id).all()
         product_data = []
         for prod in products:
-            # Aggregate stock from all warehouses
             total_stock = sum(item.current_stock for item in prod.inventory_items) if prod.inventory_items else 0
-            
             product_data.append({
-                'id': prod.id,
-                'Availability': total_stock,
-                'Number of products sold': 0,  # Would need to aggregate from orders
-                'Revenue generated': 0,  # Would need to calculate from orders
-                'Stock levels': total_stock,
-                'Lead times': 0,  # Would come from supplier data
-                'Order quantities': 0,  # Would come from order history
-                'Shipping costs': 0,  # Would come from shipping data
-                'Price': prod.unit_cost
+                "id": prod.id,
+                "Availability": total_stock,
+                "Number of products sold": 0,
+                "Revenue generated": 0,
+                "Stock levels": total_stock,
+                "Lead times": 0,
+                "Order quantities": 0,
+                "Shipping costs": 0,
+                "Price": prod.unit_cost,
             })
 
-        # Get suppliers for the company
         suppliers = db.query(Supplier).filter(Supplier.company_id == company_id).all()
         supplier_data = []
         for sup in suppliers:
             supplier_data.append({
-                'id': sup.id,
-                'Lead times': sup.avg_lead_time or 0,
-                'Order quantities': 0,  # Would come from order history
-                'Shipping costs': 0,  # Would come from shipping data
-                'Price': 0,  # Would come from order data
-                'Availability': 0,  # Would come from inventory data
-                'Number of products sold': 0  # Would come from sales data
+                "id": sup.id,
+                "Lead times": sup.avg_lead_time or 0,
+                "Order quantities": 0,
+                "Shipping costs": 0,
+                "Price": 0,
+                "Availability": 0,
+                "Number of products sold": 0,
             })
 
-        # Run the full enhanced analysis
-        # Note: run_enhanced_analysis might need similar type casting fixes internally if it creates Predictions
         results = insight_engine.run_enhanced_analysis(
             db=db,
             company_id=company_id,
             product_data=product_data,
-            supplier_data=supplier_data
+            supplier_data=supplier_data,
         )
 
         return {
             "message": "Enhanced ML analysis completed successfully",
-            "predictions_count": results['predictions_count'],
-            "insights_count": results['insights_count']
+            "predictions_count": results["predictions_count"],
+            "insights_count": results["insights_count"],
         }
     except Exception as e:
-        logger.error(f"Error running enhanced ML analysis: {str(e)}")
+        logger.error(f"Error running enhanced ML analysis: {e}")
         logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail="Error running enhanced ML analysis")
+        raise AppError(code="ML_ERROR", message="Error running enhanced ML analysis", status_code=500)
 
 
 @router.get("/insights")
@@ -254,126 +242,100 @@ def get_prioritized_insights(
     severity: str = None,
     category: str = None,
     status: str = None,
-    limit: int = 50,
+    page: int = 1,
+    page_size: int = 20,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """
-    Get prioritized insights for the user's company
-    """
     company_id = get_current_user_company_id(db, current_user)
-
-    # Use the enhanced insight engine to get prioritized insights
-    insights = insight_engine.get_prioritized_insights(
-        db=db,
-        company_id=company_id,
-        severity=severity,
-        category=category,
-        status=status,
-        limit=limit
+    limit = page * page_size
+    all_insights = insight_engine.get_prioritized_insights(
+        db=db, company_id=company_id, severity=severity, category=category, status=status, limit=limit,
     )
-
-    return insights
+    total = len(all_insights)
+    start = (page - 1) * page_size
+    items = all_insights[start:start + page_size]
+    return {"data": items, "total": total, "page": page, "page_size": page_size}
 
 
 @router.get("/insights/action-required")
 def get_action_required_insights(
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """
-    Get insights that require immediate action (high and critical severity)
-    """
     company_id = get_current_user_company_id(db, current_user)
-
-    # Use the enhanced insight engine to get prioritized insights
-    insights = insight_engine.get_prioritized_insights(
-        db=db,
-        company_id=company_id,
-        severity="high",
-        limit=20
-    )
-
-    critical_insights = insight_engine.get_prioritized_insights(
-        db=db,
-        company_id=company_id,
-        severity="critical",
-        limit=20
-    )
-
-    # Combine and sort by priority
+    insights = insight_engine.get_prioritized_insights(db=db, company_id=company_id, severity="high", limit=20)
+    critical_insights = insight_engine.get_prioritized_insights(db=db, company_id=company_id, severity="critical", limit=20)
     all_action_insights = insights + critical_insights
-    all_action_insights.sort(key=lambda x: x['priority_score'], reverse=True)
-
-    return all_action_insights[:20]  # Return top 20 action-required insights
+    all_action_insights.sort(key=lambda x: x["priority_score"], reverse=True)
+    return all_action_insights[:20]
 
 
 @router.post("/insights/{insight_id}/acknowledge")
 def acknowledge_insight(
     insight_id: int,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """
-    Acknowledge an insight (mark as seen)
-    """
     company_id = get_current_user_company_id(db, current_user)
-
     try:
         insight_engine.acknowledge_insight(db, insight_id, company_id)
         return {"message": f"Insight {insight_id} acknowledged successfully"}
+    except ValueError as e:
+        raise NotFoundError("Insight", insight_id)
     except Exception as e:
-        logger.error(f"Error acknowledging insight: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error acknowledging insight")
+        logger.error(f"Error acknowledging insight: {e}")
+        raise AppError(code="INTERNAL_ERROR", message="Error acknowledging insight", status_code=500)
 
 
 @router.post("/insights/{insight_id}/resolve")
 def resolve_insight(
     insight_id: int,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """
-    Resolve an insight (mark as addressed)
-    """
     company_id = get_current_user_company_id(db, current_user)
-
     try:
         insight_engine.resolve_insight(db, insight_id, company_id)
         return {"message": f"Insight {insight_id} resolved successfully"}
+    except ValueError as e:
+        raise NotFoundError("Insight", insight_id)
     except Exception as e:
-        logger.error(f"Error resolving insight: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error resolving insight")
+        logger.error(f"Error resolving insight: {e}")
+        raise AppError(code="INTERNAL_ERROR", message="Error resolving insight", status_code=500)
 
 
 @router.get("/predictions")
 def get_predictions(
     entity_type: str = None,
     prediction_type: str = None,
-    limit: int = 100,
+    page: int = 1,
+    page_size: int = 20,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """
-    Get predictions for the user's company
-    """
     company_id = get_current_user_company_id(db, current_user)
-
     query = db.query(Prediction).filter(Prediction.company_id == company_id)
-
     if entity_type:
         query = query.filter(Prediction.entity_type == entity_type)
-
     if prediction_type:
         query = query.filter(Prediction.prediction_type == prediction_type)
-
-    predictions = query.order_by(Prediction.created_at.desc()).limit(limit).all()
-
-    return [{
-        "id": pred.id,
-        "entity_type": pred.entity_type,
-        "entity_id": pred.entity_id,
-        "prediction_type": pred.prediction_type,
-        "prediction_value": pred.prediction_value,
-        "created_at": pred.created_at
-    } for pred in predictions]
+    total = query.count()
+    skip = (page - 1) * page_size
+    predictions = query.order_by(Prediction.created_at.desc()).offset(skip).limit(page_size).all()
+    return {
+        "data": [
+            {
+                "id": pred.id,
+                "entity_type": pred.entity_type,
+                "entity_id": pred.entity_id,
+                "prediction_type": pred.prediction_type,
+                "prediction_value": pred.prediction_value,
+                "created_at": pred.created_at,
+            }
+            for pred in predictions
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }

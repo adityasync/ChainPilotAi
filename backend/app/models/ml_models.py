@@ -13,7 +13,8 @@ class Prediction(Base):
     entity_type = Column(String, nullable=False)  # 'product' or 'supplier'
     entity_id = Column(Integer, nullable=False)  # ID of the referenced entity
     prediction_type = Column(String, nullable=False)  # type of prediction
-    prediction_value = Column(Float, nullable=False)  # numeric prediction value
+    prediction_value = Column(Float, nullable=True)  # numeric prediction value
+    prediction_text = Column(Text, nullable=True)  # AI-generated narrative text
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
@@ -28,6 +29,8 @@ class Insight(Base):
     title = Column(String, nullable=False)
     message = Column(String, nullable=False)
     severity = Column(String, nullable=False)  # 'low', 'medium', or 'high'
+    entity_type = Column(String, nullable=True)
+    entity_id = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # New fields for Phase 4 - Enhanced Insight Engine

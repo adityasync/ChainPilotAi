@@ -1,10 +1,11 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from fastapi import HTTPException, status
 from datetime import datetime, date
 from ..models.supplier_shipment import Supplier, Shipment
+from ..models.ml_models import Prediction
 from ..schemas.supplier_shipment import SupplierCreate, SupplierUpdate, ShipmentCreate, ShipmentUpdate
 from ..core.company_isolation import apply_company_filter
+from ..core.exceptions import NotFoundError, ForbiddenError
 
 
 def create_supplier(db: Session, supplier: SupplierCreate, company_id: int):
@@ -21,13 +22,17 @@ def get_suppliers_by_company(db: Session, company_id: int, skip: int = 0, limit:
     return apply_company_filter(db.query(Supplier), Supplier, company_id).offset(skip).limit(limit).all()
 
 
+def count_suppliers_by_company(db: Session, company_id: int) -> int:
+    return apply_company_filter(db.query(Supplier), Supplier, company_id).count()
+
+
 def get_supplier_by_id(db: Session, supplier_id: int, company_id: int):
     """Gets specific supplier with company verification"""
     supplier = db.query(Supplier).filter(Supplier.id == supplier_id).first()
     if not supplier:
-        raise HTTPException(status_code=404, detail="Supplier not found")
+        raise NotFoundError("Supplier")
     if supplier.company_id != company_id:
-        raise HTTPException(status_code=403, detail="Access denied: Supplier does not belong to your company")
+        raise ForbiddenError("Supplier does not belong to your company")
     return supplier
 
 
@@ -64,19 +69,60 @@ def create_shipment(db: Session, shipment: ShipmentCreate, company_id: int):
 
 def get_shipments_by_company(db: Session, company_id: int, skip: int = 0, limit: int = 100):
     """Retrieves shipments filtered by company"""
-    return apply_company_filter(db.query(Shipment), Shipment, company_id).offset(skip).limit(limit).all()
+    return (
+        db.query(Shipment)
+        .join(Supplier, Shipment.supplier_id == Supplier.id)
+        .filter(Supplier.company_id == company_id)
+        .order_by(Shipment.expected_delivery_date.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def count_shipments_by_company(db: Session, company_id: int) -> int:
+    return (
+        db.query(Shipment)
+        .join(Supplier, Shipment.supplier_id == Supplier.id)
+        .filter(Supplier.company_id == company_id)
+        .count()
+    )
+
+
+def get_shipments_by_supplier(
+    db: Session,
+    supplier_id: int,
+    company_id: int,
+    skip: int = 0,
+    limit: int = 20,
+):
+    """Retrieves shipments for a specific supplier with company verification"""
+    get_supplier_by_id(db, supplier_id, company_id)
+    return (
+        db.query(Shipment)
+        .filter(Shipment.supplier_id == supplier_id)
+        .order_by(Shipment.expected_delivery_date.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def count_shipments_by_supplier(db: Session, supplier_id: int, company_id: int) -> int:
+    get_supplier_by_id(db, supplier_id, company_id)
+    return db.query(Shipment).filter(Shipment.supplier_id == supplier_id).count()
 
 
 def get_shipment_by_id(db: Session, shipment_id: int, company_id: int):
     """Gets specific shipment with company verification"""
     shipment = db.query(Shipment).filter(Shipment.id == shipment_id).first()
     if not shipment:
-        raise HTTPException(status_code=404, detail="Shipment not found")
+        raise NotFoundError("Shipment")
 
     # Get the associated supplier to verify company ownership
     supplier = db.query(Supplier).filter(Supplier.id == shipment.supplier_id).first()
     if not supplier or supplier.company_id != company_id:
-        raise HTTPException(status_code=403, detail="Access denied: Shipment does not belong to your company")
+        raise ForbiddenError("Shipment does not belong to your company")
 
     return shipment
 
@@ -103,3 +149,42 @@ def delete_shipment(db: Session, shipment_id: int, company_id: int):
     db.delete(shipment)
     db.commit()
     return shipment
+
+
+def get_supplier_detail(db: Session, supplier_id: int, company_id: int):
+    supplier = get_supplier_by_id(db, supplier_id, company_id)
+    shipments = get_shipments_by_supplier(db, supplier_id, company_id, 0, 10)
+    latest_delay_prediction = (
+        db.query(Prediction)
+        .filter(
+            Prediction.company_id == company_id,
+            Prediction.entity_type == "supplier",
+            Prediction.entity_id == supplier_id,
+            Prediction.prediction_type.in_(["delay_probability", "delay_risk"]),
+        )
+        .order_by(Prediction.created_at.desc())
+        .first()
+    )
+
+    return {
+        "id": supplier.id,
+        "company_id": supplier.company_id,
+        "supplier_name": supplier.supplier_name,
+        "avg_lead_time": supplier.avg_lead_time,
+        "reliability_score": supplier.reliability_score,
+        "delay_probability": (
+            float(latest_delay_prediction.prediction_value)
+            if latest_delay_prediction
+            else None
+        ),
+        "shipments": [
+            {
+                "id": shipment.id,
+                "supplier_id": shipment.supplier_id,
+                "expected_delivery_date": shipment.expected_delivery_date,
+                "actual_delivery_date": shipment.actual_delivery_date,
+                "shipping_cost": shipment.shipping_cost,
+            }
+            for shipment in shipments
+        ],
+    }
