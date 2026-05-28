@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { mlAPI, inventoryAPI } from '../services/apiService';
+import { dashboardAPI } from '../services/apiService';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import AskAI from '../components/AskAI';
 
 interface Insight {
   id: number;
@@ -16,40 +17,30 @@ const DashboardPage = () => {
     totalProducts: 0,
     needsAttention: 0,
     inventoryHealth: 0,
+    stockoutRisks: 0,
+    suppliersAtRisk: 0,
   });
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [insightsResponse, productsResponse] = await Promise.all([
-          mlAPI.getActionRequiredInsights(),
-          inventoryAPI.getProducts({ limit: 1000 })
-        ]);
-
-        const products = productsResponse.data || [];
-        const totalProducts = products.length;
-        const needsAttention = insightsResponse.data?.length || 0;
-
-        // Calculate Inventory Health: % of products with stock > 0
-        // (This is a simple heuristic for now)
-        const productsWithStock = products.filter((p: any) =>
-          p.inventory_items && p.inventory_items.some((i: any) => i.current_stock > 0)
-        ).length;
-
-        const healthPercentage = totalProducts > 0
-          ? Math.round((productsWithStock / totalProducts) * 100)
-          : 0;
+        const response = await dashboardAPI.getSummary();
+        const summary = response.data;
 
         setStats({
-          totalProducts,
-          needsAttention,
-          inventoryHealth: healthPercentage,
+          totalProducts: summary.kpis.total_products,
+          needsAttention: summary.kpis.needs_attention_count,
+          inventoryHealth: summary.kpis.inventory_health,
+          stockoutRisks: summary.kpis.stockout_risk_count + summary.kpis.overstock_risk_count,
+          suppliersAtRisk: summary.kpis.suppliers_at_risk,
         });
-        setInsights(insightsResponse.data?.slice(0, 3) || []);
+        setInsights(summary.top_insights || []);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setError('Unable to load dashboard data.');
       } finally {
         setLoading(false);
       }
@@ -81,6 +72,16 @@ const DashboardPage = () => {
         </p>
       </section>
 
+      <AskAI />
+
+      {error && (
+        <section className="mb-10">
+          <div className="rounded-2xl bg-[#fff4f4] px-5 py-4 text-sm text-[#b42318]">
+            {error}
+          </div>
+        </section>
+      )}
+
       {/* Key Metrics */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
         <MetricCard
@@ -89,14 +90,14 @@ const DashboardPage = () => {
           status={stats.inventoryHealth > 80 ? 'good' : stats.inventoryHealth > 50 ? 'warning' : 'critical'}
         />
         <MetricCard
-          label="Supplier Performance"
-          value="87%"
-          status="warning"
+          label="Stock Risks"
+          value={`${stats.stockoutRisks}`}
+          status={stats.stockoutRisks === 0 ? 'good' : stats.stockoutRisks < 3 ? 'warning' : 'critical'}
         />
         <MetricCard
-          label="Demand Accuracy"
-          value="91%"
-          status="good"
+          label="Supplier Risk"
+          value={`${stats.suppliersAtRisk}`}
+          status={stats.suppliersAtRisk === 0 ? 'good' : stats.suppliersAtRisk < 3 ? 'warning' : 'critical'}
         />
       </section>
 

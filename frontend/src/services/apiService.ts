@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000'; // This should match your backend server URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // Create an Axios instance with default config
 const apiClient = axios.create({
@@ -62,7 +62,7 @@ export const authAPI = {
 
 // Inventory endpoints
 export const inventoryAPI = {
-  getProducts: (params?: { skip?: number; limit?: number }) =>
+  getProducts: (params?: { page?: number; page_size?: number }) =>
     apiClient.get('/inventory/products/', { params }),
 
   getProductById: (id: number) =>
@@ -77,7 +77,7 @@ export const inventoryAPI = {
   deleteProduct: (id: number) =>
     apiClient.delete(`/inventory/products/${id}`),
 
-  getInventoryItems: (params?: { skip?: number; limit?: number }) =>
+  getInventoryItems: (params?: { page?: number; page_size?: number }) =>
     apiClient.get('/inventory/items/', { params }),
 
   getInventoryItemById: (id: number) =>
@@ -95,11 +95,14 @@ export const inventoryAPI = {
 
 // Supplier endpoints
 export const supplierAPI = {
-  getSuppliers: (params?: { skip?: number; limit?: number }) =>
+  getSuppliers: (params?: { page?: number; page_size?: number }) =>
     apiClient.get('/suppliers/', { params }),
 
   getSupplierById: (id: number) =>
     apiClient.get(`/suppliers/${id}`),
+
+  getSupplierDetail: (id: number) =>
+    apiClient.get(`/suppliers/${id}/detail`),
 
   createSupplier: (data: any) =>
     apiClient.post('/suppliers/', data),
@@ -110,7 +113,7 @@ export const supplierAPI = {
   deleteSupplier: (id: number) =>
     apiClient.delete(`/suppliers/${id}`),
 
-  getShipments: (params?: { skip?: number; limit?: number }) =>
+  getShipments: (params?: { page?: number; page_size?: number; supplier_id?: number }) =>
     apiClient.get('/suppliers/shipments/', { params }),
 
   getShipmentById: (id: number) =>
@@ -128,7 +131,7 @@ export const supplierAPI = {
 
 // Order endpoints
 export const orderAPI = {
-  getOrders: (params?: { skip?: number; limit?: number }) =>
+  getOrders: (params?: { page?: number; page_size?: number }) =>
     apiClient.get('/orders/', { params }),
 
   getOrderById: (id: number) =>
@@ -146,7 +149,7 @@ export const orderAPI = {
 
 // ML endpoints
 export const mlAPI = {
-  getInsights: (params?: { severity?: string; category?: string; status?: string; limit?: number }) =>
+  getInsights: (params?: { severity?: string; category?: string; status?: string; page?: number; page_size?: number }) =>
     apiClient.get('/ml/insights', { params }),
 
   getActionRequiredInsights: () =>
@@ -161,7 +164,7 @@ export const mlAPI = {
   runAnalysis: () =>
     apiClient.post('/ml/run-analysis'),
 
-  getPredictions: (params?: { entity_type?: string; prediction_type?: string; limit?: number }) =>
+  getPredictions: (params?: { entity_type?: string; prediction_type?: string; page?: number; page_size?: number }) =>
     apiClient.get('/ml/predictions', { params }),
 
   getDemandForecast: (productId: number, date: string) =>
@@ -172,6 +175,28 @@ export const mlAPI = {
 
   getSupplierDelayRisk: (supplierId: number) =>
     apiClient.get(`/ml/supplier-delay-risk/${supplierId}`),
+
+  detectCostAnomaly: (costData: Record<string, number>) =>
+    apiClient.post('/ml/cost-anomaly', costData),
+};
+
+export const demandAPI = {
+  getDemandHistory: (productId: number, period: 'week' | 'month' | 'quarter') =>
+    apiClient.get(`/demand/${productId}/history`, { params: { period } }),
+
+  getDemandSummary: (
+    productId: number,
+    period: 'week' | 'month' | 'quarter',
+    forecastDate?: string,
+  ) =>
+    apiClient.get(`/demand/${productId}/summary`, {
+      params: { period, forecast_date: forecastDate },
+    }),
+};
+
+export const dashboardAPI = {
+  getSummary: () =>
+    apiClient.get('/dashboard/summary'),
 };
 
 // Data endpoints
@@ -191,6 +216,14 @@ export const settingsAPI = {
 
   updateProfile: (data: any) =>
     apiClient.put('/auth/me', data),
+};
+
+export const aiAPI = {
+  generateInsights: () =>
+    apiClient.post('/ai/insights/generate'),
+
+  getSupplierNarrative: (supplierId: number) =>
+    apiClient.get(`/ai/suppliers/${supplierId}/narrative`),
 };
 
 export default apiClient;

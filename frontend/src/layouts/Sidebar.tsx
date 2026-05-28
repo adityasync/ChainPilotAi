@@ -30,11 +30,13 @@ const Sidebar = () => {
     ">
       {/* Logo */}
       <div className="px-4 mb-8 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-[#1d1d1f] dark:bg-white flex items-center justify-center flex-shrink-0">
-          <span className="text-white dark:text-black font-bold text-sm">S</span>
-        </div>
+        <img
+          src="/favicon.png"
+          alt="ChainPilot logo"
+          className="w-8 h-8 rounded-lg object-cover flex-shrink-0 invert dark:invert-0"
+        />
         <span className="nav-label text-lg font-semibold text-[#1d1d1f] dark:text-white whitespace-nowrap">
-          Supply
+          ChainPilot
         </span>
       </div>
 
