@@ -4,12 +4,12 @@ from sqlalchemy.orm import Session
 from ...models.ml_models import Prediction
 from ...core.config import AI_MODEL
 from .client import GLMClient
+from .prompts import supplier_narrative_prompt
 
-NARRATIVE_SYSTEM_PROMPT = """You are a supply chain risk analyst. Write a concise risk assessment narrative (3-5 paragraphs) for the supplier described below. Cover: delivery reliability, cost patterns, and overall risk posture. Be specific with numbers from the data provided."""
+NARRATIVE_SYSTEM_PROMPT = supplier_narrative_prompt()
 
 
 def get_or_generate_narrative(client: GLMClient, db: Session, supplier_id: int, company_id: int, context: dict) -> dict:
-    # Check cache
     cached = db.query(Prediction).filter(
         Prediction.company_id == company_id,
         Prediction.entity_type == "supplier",
@@ -37,7 +37,6 @@ def get_or_generate_narrative(client: GLMClient, db: Session, supplier_id: int, 
         )
         response_text = client.extract_content(response)
 
-        # Save to cache
         prediction = Prediction(
             company_id=company_id,
             entity_type="supplier",

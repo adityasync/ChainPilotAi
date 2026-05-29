@@ -1,8 +1,9 @@
 import json
 from ...core.config import AI_MODEL, AI_FALLBACK_MODEL
 from .client import GLMClient
+from .prompts import nl_query_prompt
 
-NL_QUERY_SYSTEM_PROMPT = """You are a supply chain operations assistant. Answer questions using ONLY the data provided in the context below. Be specific — reference product names, stock levels, supplier names, and numbers. Keep answers concise and actionable. If the context doesn't contain enough information to answer, say so clearly."""
+NL_QUERY_SYSTEM_PROMPT = nl_query_prompt()
 
 
 def stream_nl_query(client: GLMClient, context: dict, question: str):

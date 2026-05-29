@@ -192,6 +192,12 @@ export const demandAPI = {
     apiClient.get(`/demand/${productId}/summary`, {
       params: { period, forecast_date: forecastDate },
     }),
+
+  getForecastAccuracy: (productId: number) =>
+    apiClient.get(`/demand/${productId}/accuracy`),
+
+  getPortfolioSummary: (period: 'week' | 'month' | 'quarter' = 'month') =>
+    apiClient.get('/demand/portfolio/summary', { params: { period } }),
 };
 
 export const dashboardAPI = {

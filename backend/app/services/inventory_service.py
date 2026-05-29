@@ -1,15 +1,78 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from fastapi import HTTPException, status
 from datetime import datetime
 from ..models.product_inventory import Product, Inventory
 from ..models.user_company import User
+from ..models.ml_models import Prediction
 from ..schemas.product_inventory import ProductCreate, ProductUpdate, InventoryItemCreate, InventoryItemUpdate
-from ..core.company_isolation import apply_company_filter
+from ..core.exceptions import NotFoundError, ForbiddenError
+
+
+def _get_inventory_risk_predictions(db: Session, product_ids: list[int], company_id: int) -> dict[int, dict]:
+    """Batch-fetch latest inventory_risk prediction for a list of product IDs."""
+    if not product_ids:
+        return {}
+
+    from sqlalchemy import func, select
+
+    subq = (
+        db.query(
+            Prediction.entity_id,
+            func.max(Prediction.created_at).label("max_created"),
+        )
+        .filter(
+            Prediction.company_id == company_id,
+            Prediction.entity_type == "product",
+            Prediction.entity_id.in_(product_ids),
+            Prediction.prediction_type == "inventory_risk",
+        )
+        .group_by(Prediction.entity_id)
+        .subquery()
+    )
+
+    rows = (
+        db.query(Prediction.entity_id, Prediction.prediction_value)
+        .join(
+            subq,
+            (Prediction.entity_id == subq.c.entity_id)
+            & (Prediction.created_at == subq.c.max_created),
+        )
+        .all()
+    )
+
+    return {row.entity_id: {"risk_score": float(row.prediction_value)} for row in rows}
+
+
+def compute_risk_status(current_stock: int, reorder_point: int, max_stock: int) -> str:
+    """Compute inventory risk status based on stock levels."""
+    if current_stock <= reorder_point * 0.5:
+        return "CRITICAL"
+    if current_stock <= reorder_point:
+        return "RISK"
+    if max_stock > 0 and current_stock >= max_stock * 0.9:
+        return "OVERSTOCK"
+    return "HEALTHY"
+
+
+def _enrich_with_risk(item, ml_risk: dict | None = None):
+    """Add risk_status to an inventory item ORM object, including ML risk if available."""
+    risk_status = compute_risk_status(item.current_stock, item.reorder_point, item.max_stock)
+    item_dict = {
+        "id": item.id,
+        "product_id": item.product_id,
+        "warehouse": item.warehouse,
+        "current_stock": item.current_stock,
+        "reorder_point": item.reorder_point,
+        "max_stock": item.max_stock,
+        "last_updated": item.last_updated,
+        "risk_status": risk_status,
+    }
+    if ml_risk:
+        item_dict["ml_risk_score"] = ml_risk.get("risk_score")
+    return item_dict
 
 
 def create_product(db: Session, product: ProductCreate, company_id: int):
-    """Creates a product with company association"""
     db_product = Product(**product.dict(), company_id=company_id)
     db.add(db_product)
     db.commit()
@@ -18,22 +81,24 @@ def create_product(db: Session, product: ProductCreate, company_id: int):
 
 
 def get_products_by_company(db: Session, company_id: int, skip: int = 0, limit: int = 100):
-    """Retrieves products filtered by company"""
-    return apply_company_filter(db.query(Product), Product, company_id).offset(skip).limit(limit).all()
+    return db.query(Product).filter(Product.company_id == company_id).offset(skip).limit(limit).all()
+
+
+def count_products_by_company(db: Session, company_id: int) -> int:
+    from sqlalchemy import func
+    return db.query(func.count(Product.id)).filter(Product.company_id == company_id).scalar() or 0
 
 
 def get_product_by_id(db: Session, product_id: int, company_id: int):
-    """Gets a specific product with company verification"""
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise NotFoundError("Product")
     if product.company_id != company_id:
-        raise HTTPException(status_code=403, detail="Access denied: Product does not belong to your company")
+        raise ForbiddenError("Product does not belong to your company")
     return product
 
 
 def update_product(db: Session, product_id: int, product_update: ProductUpdate, company_id: int):
-    """Updates product with company verification"""
     product = get_product_by_id(db, product_id, company_id)
     update_data = product_update.dict(exclude_unset=True)
     for field, value in update_data.items():
@@ -44,7 +109,6 @@ def update_product(db: Session, product_id: int, product_update: ProductUpdate, 
 
 
 def delete_product(db: Session, product_id: int, company_id: int):
-    """Deletes product with company verification"""
     product = get_product_by_id(db, product_id, company_id)
     db.delete(product)
     db.commit()
@@ -52,10 +116,7 @@ def delete_product(db: Session, product_id: int, company_id: int):
 
 
 def create_inventory_item(db: Session, inventory_item: InventoryItemCreate, company_id: int):
-    """Creates inventory item with company association"""
-    # Verify that the product belongs to the same company
-    product = get_product_by_id(db, inventory_item.product_id, company_id)
-
+    get_product_by_id(db, inventory_item.product_id, company_id)
     db_inventory_item = Inventory(**inventory_item.dict())
     db.add(db_inventory_item)
     db.commit()
@@ -64,32 +125,44 @@ def create_inventory_item(db: Session, inventory_item: InventoryItemCreate, comp
 
 
 def get_inventory_items_by_company(db: Session, company_id: int, skip: int = 0, limit: int = 100):
-    """Retrieves inventory items filtered by company"""
-    return apply_company_filter(db.query(Inventory), Inventory, company_id).offset(skip).limit(limit).all()
+    from ..models.product_inventory import Inventory
+    return (
+        db.query(Inventory)
+        .join(Product, Inventory.product_id == Product.id)
+        .filter(Product.company_id == company_id)
+        .order_by(Inventory.last_updated.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def count_inventory_items_by_company(db: Session, company_id: int) -> int:
+    from sqlalchemy import func
+    from ..models.product_inventory import Inventory
+    return (
+        db.query(func.count(Inventory.id))
+        .join(Product, Inventory.product_id == Product.id)
+        .filter(Product.company_id == company_id)
+        .scalar()
+    ) or 0
 
 
 def get_inventory_item_by_id(db: Session, item_id: int, company_id: int):
-    """Gets specific inventory item with company verification"""
+    from ..models.product_inventory import Inventory
     inventory_item = db.query(Inventory).filter(Inventory.id == item_id).first()
     if not inventory_item:
-        raise HTTPException(status_code=404, detail="Inventory item not found")
-
-    # Get the associated product to verify company ownership
+        raise NotFoundError("Inventory item")
     product = db.query(Product).filter(Product.id == inventory_item.product_id).first()
     if not product or product.company_id != company_id:
-        raise HTTPException(status_code=403, detail="Access denied: Inventory item does not belong to your company")
-
+        raise ForbiddenError("Inventory item does not belong to your company")
     return inventory_item
 
 
 def update_inventory_item(db: Session, item_id: int, inventory_update: InventoryItemUpdate, company_id: int):
-    """Updates inventory item with company verification"""
     inventory_item = get_inventory_item_by_id(db, item_id, company_id)
-
-    # If product_id is being updated, verify it belongs to the same company
     if inventory_update.product_id is not None:
         get_product_by_id(db, inventory_update.product_id, company_id)
-
     update_data = inventory_update.dict(exclude_unset=True)
     for field, value in update_data.items():
         setattr(inventory_item, field, value)
@@ -99,7 +172,6 @@ def update_inventory_item(db: Session, item_id: int, inventory_update: Inventory
 
 
 def delete_inventory_item(db: Session, item_id: int, company_id: int):
-    """Deletes inventory item with company verification"""
     inventory_item = get_inventory_item_by_id(db, item_id, company_id)
     db.delete(inventory_item)
     db.commit()

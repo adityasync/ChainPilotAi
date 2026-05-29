@@ -1,19 +1,12 @@
 import json
 from sqlalchemy.orm import Session
-
 from ...core.exceptions import ServiceUnavailableError
 from ...models.ml_models import Insight
 from ...core.config import AI_MODEL
 from .client import GLMClient
+from .prompts import insight_generation_prompt
 
-INSIGHT_SYSTEM_PROMPT = """You are a supply chain analyst. Based on the operational data provided, generate actionable business insights. Return a JSON array where each element has exactly these fields:
-- "title": short insight title (max 80 chars)
-- "message": detailed explanation (2-3 sentences)
-- "severity": one of "low", "medium", "high", "critical"
-- "entity_type": "product", "supplier", or "warehouse"
-- "entity_id": the numeric ID of the referenced entity, or null
-
-Return ONLY the JSON array, no markdown, no commentary. Generate 3-5 insights focused on the most critical issues."""
+INSIGHT_SYSTEM_PROMPT = insight_generation_prompt()
 
 
 def generate_ai_insights(client: GLMClient, db: Session, company_id: int, context: dict) -> list[dict]:
@@ -32,7 +25,6 @@ def generate_ai_insights(client: GLMClient, db: Session, company_id: int, contex
         if not content:
             raise ValueError("Empty response from AI")
 
-        # Strip markdown fences if present
         if content.strip().startswith("```json"):
             content = content.strip()[7:-3].strip()
         elif content.strip().startswith("```"):
@@ -47,14 +39,13 @@ def generate_ai_insights(client: GLMClient, db: Session, company_id: int, contex
     except Exception as e:
         raise ServiceUnavailableError(f"Failed to generate or parse insights: {str(e)}")
 
-    # Delete existing AI-generated insights for this company
     db.query(Insight).filter(Insight.company_id == company_id, Insight.category == "ai_generated").delete()
 
     created_insights = []
     for item in insights_data:
         severity = item.get("severity", "medium").lower()
-        if severity not in ["low", "medium", "high", "critical"]:
-            severity = "medium"
+        if severity not in ["low", "medium", "high"]:
+            continue
 
         insight = Insight(
             company_id=company_id,

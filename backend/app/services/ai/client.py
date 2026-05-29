@@ -19,8 +19,8 @@ class GLMClient:
     def __init__(self, base_url: str, api_key: str, timeout: int):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
-        self.timeout = max(timeout, 30)
-        self._client = httpx.Client(verify=False, timeout=self.timeout)
+        self.timeout = min(timeout, 10)
+        self._client = httpx.Client(timeout=self.timeout)
 
     def _headers(self) -> dict:
         return {
@@ -29,7 +29,6 @@ class GLMClient:
         }
 
     def _handle_error(self, resp: httpx.Response):
-        """Parse GLM error response and raise a clear exception."""
         try:
             err = resp.json().get("error", {})
             msg = err.get("message", resp.text[:200])
@@ -64,7 +63,7 @@ class GLMClient:
                 self._handle_error(resp)
             return resp.json()
         self._handle_error(resp)
-        return {}  # unreachable
+        return {}
 
     def chat_stream(self, model: str, messages: list[dict], max_tokens: int = 2048):
         payload = {
@@ -80,7 +79,6 @@ class GLMClient:
             json=payload,
         ) as resp:
             if resp.status_code >= 400:
-                # Read the full response body to get the error message
                 resp.read()
                 self._handle_error(resp)
             for line in resp.iter_lines():
@@ -100,7 +98,6 @@ class GLMClient:
                     continue
 
     def extract_content(self, response: dict) -> str:
-        """Extract content from GLM response."""
         choices = response.get("choices", [])
         if not choices:
             return ""
@@ -109,7 +106,6 @@ class GLMClient:
 
 
 def get_ai_client() -> Optional[GLMClient]:
-    """Returns a configured GLM client, or None if no key."""
     if not AI_API_KEY:
         return None
     return GLMClient(
