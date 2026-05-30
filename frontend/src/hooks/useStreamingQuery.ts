@@ -34,6 +34,13 @@ export function useStreamingQuery() {
       signal: controller.signal,
     })
       .then(async (response) => {
+        if (response.status === 401) {
+          // Token expired or invalid — clear auth and redirect to login
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          throw new Error('Session expired');
+        }
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }

@@ -79,7 +79,7 @@ const DataUploadPage: React.FC = () => {
                     Import Data
                 </h1>
                 <p className="text-lg text-[#86868b] dark:text-[#98989d] mt-1">
-                    Upload CSV files to update inventory and trigger ML analysis.
+                    Upload a CSV to populate products, inventory, suppliers, and orders in one go.
                 </p>
             </div>
 
@@ -178,10 +178,25 @@ const DataUploadPage: React.FC = () => {
                         <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Current Stock</code>
                     </p>
                     <p className="text-sm text-[#86868b] dark:text-[#98989d] mt-1">
-                        Optional: <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Category</code>,{' '}
+                        Inventory: <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Category</code>,{' '}
                         <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Warehouse</code>,{' '}
                         <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Min Stock</code>,{' '}
                         <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Max Stock</code>
+                    </p>
+                    <p className="text-sm text-[#86868b] dark:text-[#98989d] mt-1">
+                        Suppliers: <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Supplier</code>,{' '}
+                        <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Reliability</code>,{' '}
+                        <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Lead Time</code>
+                    </p>
+                    <p className="text-sm text-[#86868b] dark:text-[#98989d] mt-1">
+                        Shipments: <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Shipment Expected</code>,{' '}
+                        <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Shipment Actual</code>,{' '}
+                        <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Shipment Cost</code>
+                    </p>
+                    <p className="text-sm text-[#86868b] dark:text-[#98989d] mt-1">
+                        Orders: <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Order Qty</code>,{' '}
+                        <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Order Date</code>,{' '}
+                        <code className="bg-[#e8e8ed] dark:bg-[#3a3a3c] px-1.5 py-0.5 rounded">Region</code>
                     </p>
                 </div>
 
@@ -209,19 +224,31 @@ const DataUploadPage: React.FC = () => {
                         <h3 className="text-lg font-semibold text-[#1d1d1f] dark:text-white mb-6">Processing Results</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="p-4 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl">
-                                <p className="text-sm text-[#86868b] dark:text-[#98989d]">Products Created</p>
-                                <p className="text-2xl font-bold text-[#1d1d1f] dark:text-white mt-1">{stats.stats?.products_created || 0}</p>
+                                <p className="text-sm text-[#86868b] dark:text-[#98989d]">Products</p>
+                                <p className="text-2xl font-bold text-[#1d1d1f] dark:text-white mt-1">{(stats.stats?.products_created || 0) + (stats.stats?.products_updated || 0)}</p>
                             </div>
                             <div className="p-4 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl">
-                                <p className="text-sm text-[#86868b] dark:text-[#98989d]">Updated</p>
-                                <p className="text-2xl font-bold text-[#1d1d1f] dark:text-white mt-1">{stats.stats?.products_updated || 0}</p>
+                                <p className="text-sm text-[#86868b] dark:text-[#98989d]">Suppliers</p>
+                                <p className="text-2xl font-bold text-[#1d1d1f] dark:text-white mt-1">{(stats.stats?.suppliers_created || 0) + (stats.stats?.suppliers_updated || 0)}</p>
+                            </div>
+                            <div className="p-4 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl">
+                                <p className="text-sm text-[#86868b] dark:text-[#98989d]">Shipments</p>
+                                <p className="text-2xl font-bold text-[#1d1d1f] dark:text-white mt-1">{stats.stats?.shipments_created || 0}</p>
+                            </div>
+                            <div className="p-4 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl">
+                                <p className="text-sm text-[#86868b] dark:text-[#98989d]">Orders</p>
+                                <p className="text-2xl font-bold text-[#1d1d1f] dark:text-white mt-1">{stats.stats?.orders_created || 0}</p>
+                            </div>
+                            <div className="p-4 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl">
+                                <p className="text-sm text-[#86868b] dark:text-[#98989d]">Inventory Records</p>
+                                <p className="text-2xl font-bold text-[#1d1d1f] dark:text-white mt-1">{stats.stats?.inventory_records_updated || 0}</p>
                             </div>
                             <div className="p-4 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl">
                                 <p className="text-sm text-[#86868b] dark:text-[#98989d]">Predictions</p>
                                 <p className="text-2xl font-bold text-[#0071e3] mt-1">{stats.analysis?.predictions_generated || 0}</p>
                             </div>
                             <div className="p-4 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl">
-                                <p className="text-sm text-[#86868b] dark:text-[#98989d]">New Insights</p>
+                                <p className="text-sm text-[#86868b] dark:text-[#98989d]">Insights</p>
                                 <p className="text-2xl font-bold text-[#34c759] mt-1">{stats.analysis?.insights_generated || 0}</p>
                             </div>
                         </div>

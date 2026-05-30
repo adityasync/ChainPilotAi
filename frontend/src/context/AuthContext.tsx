@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { authAPI } from '../services/apiService';
 
@@ -34,11 +34,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      // Clear any stale data from a previous session FIRST
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setToken(null);
+
       // Login request
       const response = await authAPI.login(email, password);
       const { access_token } = response.data;
 
-      // IMPORTANT: Save token FIRST so the interceptor can use it for the next request
+      // Save token so the interceptor can use it for the next request
       localStorage.setItem('token', access_token);
       setToken(access_token);
 
@@ -50,6 +56,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       return true;
     } catch (error) {
+      // On failure, ensure no partial state leaks
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setToken(null);
       console.error('Login error:', error);
       return false;
     }
@@ -85,9 +96,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Force full page reload to clear all React state from the previous session
+    window.location.href = '/login';
   };
 
   const isAuthenticated = !!token;
+
+  // Validate stored token on app init — catches stale/invalid tokens early
+  useEffect(() => {
+    const validateToken = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (!storedToken) return;
+
+      try {
+        const userResponse = await authAPI.getCurrentUser();
+        // Token is valid — sync user state in case it was stale
+        setUser(userResponse.data);
+        localStorage.setItem('user', JSON.stringify(userResponse.data));
+      } catch {
+        // Token is invalid/expired — clear everything
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    };
+
+    validateToken();
+  }, []); // Only on mount
+
+  // Listen for token changes from other tabs (cross-tab collision detection)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'token') {
+        // Token was changed or removed by another tab
+        const newToken = e.newValue;
+        if (!newToken) {
+          // Another tab logged out — sync this tab
+          setToken(null);
+          setUser(null);
+          window.location.href = '/login';
+        } else if (newToken !== token) {
+          // Another tab logged in with a different user — force logout to avoid confusion
+          setToken(null);
+          setUser(null);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [token]);
 
   return (
     <AuthContext.Provider value={{ user, token, login, register, logout, refreshUser, setUser, isAuthenticated }}>

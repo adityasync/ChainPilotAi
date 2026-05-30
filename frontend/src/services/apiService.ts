@@ -169,7 +169,7 @@ export const mlAPI = {
     apiClient.post(`/ml/insights/${id}/resolve`),
 
   runAnalysis: () =>
-    apiClient.post('/ml/run-analysis'),
+    apiClient.post('/ml/run-analysis', null, { timeout: 120000 }),
 
   getPredictions: (params?: { entity_type?: string; prediction_type?: string; page?: number; page_size?: number }) =>
     apiClient.get('/ml/predictions', { params }),
@@ -237,7 +237,7 @@ export const settingsAPI = {
 
 export const aiAPI = {
   generateInsights: () =>
-    apiClient.post('/ai/insights/generate'),
+    apiClient.post('/ai/insights/generate', null, { timeout: 120000 }),
 
   getSupplierNarrative: (supplierId: number) =>
     apiClient.get(`/ai/suppliers/${supplierId}/narrative`),

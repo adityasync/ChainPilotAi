@@ -325,19 +325,24 @@ async def get_predictions(
     current_user: str = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    company_id = await get_current_user_company_id(db, current_user)
-    query = select(Prediction).filter(Prediction.company_id == company_id)
-    if entity_type:
-        query = query.filter(Prediction.entity_type == entity_type)
-    if prediction_type:
-        query = query.filter(Prediction.prediction_type == prediction_type)
-
     from sqlalchemy import func
-    count_result = await db.scalar(select(func.count()).select_from(query.subquery()))
-    total = count_result or 0
+    company_id = await get_current_user_company_id(db, current_user)
 
+    # Build filter conditions
+    filters = [Prediction.company_id == company_id]
+    if entity_type:
+        filters.append(Prediction.entity_type == entity_type)
+    if prediction_type:
+        filters.append(Prediction.prediction_type == prediction_type)
+
+    # Count total
+    total = await db.scalar(select(func.count(Prediction.id)).filter(*filters)) or 0
+
+    # Fetch page
     skip = (page - 1) * page_size
-    result = await db.execute(query.order_by(Prediction.created_at.desc()).offset(skip).limit(page_size))
+    result = await db.execute(
+        select(Prediction).filter(*filters).order_by(Prediction.created_at.desc()).offset(skip).limit(page_size)
+    )
     predictions = result.scalars().all()
 
     return {

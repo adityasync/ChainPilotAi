@@ -34,7 +34,7 @@ async def _get_inventory_status_counts(db: AsyncSession, company_id: int) -> dic
             else_=0,
         )).label("has_max"),
         func.sum(case(
-            ((inv_agg.c.max_stock > 0) & (inv_agg.c.current_stock >= inv_agg.c.max_stock), 1),
+            ((inv_agg.c.max_stock > 0) & (inv_agg.c.current_stock >= inv_agg.c.max_stock * 0.9), 1),
             else_=0,
         )).label("overstock"),
         func.sum(case(
@@ -165,7 +165,7 @@ async def _get_top_products(db: AsyncSession, company_id: int, limit: int = 5) -
             risk_status = "critical"
         elif inv["reorder_point"] > 0 and inv["current_stock"] <= inv["reorder_point"]:
             risk_status = "stockout"
-        elif inv["max_stock"] > 0 and inv["current_stock"] >= inv["max_stock"]:
+        elif inv["max_stock"] > 0 and inv["current_stock"] >= inv["max_stock"] * 0.9:
             risk_status = "overstock"
         else:
             risk_status = "healthy"

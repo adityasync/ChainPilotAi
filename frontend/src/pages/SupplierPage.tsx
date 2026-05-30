@@ -40,6 +40,7 @@ const SupplierPage = () => {
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [totalActive, setTotalActive] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [mlDelayRisk, setMlDelayRisk] = useState<{ delay_risk: boolean; delay_probability: number } | null>(null);
@@ -116,7 +117,8 @@ const SupplierPage = () => {
         );
       }
 
-      const data = (suppliersResponse.data?.data || []).map((item: any) => {
+      const allSuppliers = suppliersResponse.data?.data || [];
+      const data = allSuppliers.map((item: any) => {
         const reliability = item.reliability_score ?? 0;
         let status: SupplierCardData['status'] = 'active';
         if (reliability < 0.6) {
@@ -137,7 +139,28 @@ const SupplierPage = () => {
       });
 
       setSuppliers(data);
-      setTotal(suppliersResponse.data?.total || 0);
+      const totalCount = suppliersResponse.data?.total || 0;
+      setTotal(totalCount);
+
+      // Compute total active count: if we have all suppliers on this page, count directly;
+      // otherwise use a heuristic based on the ratio on the current page
+      if (allSuppliers.length >= totalCount) {
+        setTotalActive(data.filter((s) => s.status === 'active').length);
+      } else {
+        // Fetch all suppliers to get accurate active count
+        try {
+          const allResponse = await supplierAPI.getSuppliers({ page_size: totalCount || 500 });
+          const allData = allResponse.data?.data || [];
+          const activeCount = allData.filter((item: any) => {
+            const reliability = item.reliability_score ?? 0;
+            return reliability >= 0.8;
+          }).length;
+          setTotalActive(activeCount);
+        } catch {
+          // Fallback: estimate from current page
+          setTotalActive(data.filter((s) => s.status === 'active').length);
+        }
+      }
     } catch (fetchError) {
       console.error('Failed to fetch suppliers:', fetchError);
       setError('Unable to load suppliers.');
@@ -152,8 +175,6 @@ const SupplierPage = () => {
     );
   }
 
-  const activeCount = suppliers.filter((supplier) => supplier.status === 'active').length;
-
   return (
     <div className="py-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
@@ -162,7 +183,7 @@ const SupplierPage = () => {
             Suppliers
           </h1>
           <p className="text-xl text-[#86868b] dark:text-[#98989d]">
-            {activeCount} active of {suppliers.length} suppliers
+            {totalActive} active of {total} suppliers
           </p>
         </div>
 

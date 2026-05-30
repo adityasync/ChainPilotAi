@@ -47,18 +47,15 @@ const InsightsPage = () => {
     setLoading(true);
     setError('');
     try {
+      // Fetch ALL insights without filters — filtering is done client-side
+      // so KPI summary cards always show true totals
       const response = await mlAPI.getInsights({
-        severity: severityFilter === 'all' ? undefined : severityFilter,
-        category: categoryFilter === 'all' ? undefined : categoryFilter,
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        page_size: 100,
+        page_size: 500,
       });
       const data = response.data?.data || [];
       setInsights(data);
-      setTotalItems(data.length);
     } catch {
       setInsights([]);
-      setTotalItems(0);
       setError('Unable to load insights.');
     } finally {
       setLoading(false);
@@ -76,7 +73,8 @@ const InsightsPage = () => {
       const data = response.data?.data || [];
       setPredictions(data);
       setTotalItems(data.length);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load predictions:', err);
       setPredictions([]);
       setTotalItems(0);
       setError('Unable to load predictions.');
@@ -147,6 +145,23 @@ const InsightsPage = () => {
     finally { setActionLoadingId(null); }
   };
 
+  const criticalCount = insights.filter(i => i.severity === 'critical').length;
+  const highCount = insights.filter(i => i.severity === 'high').length;
+
+  const filteredInsights = insights.filter(i => {
+    if (severityFilter !== 'all' && i.severity !== severityFilter) return false;
+    if (categoryFilter !== 'all' && i.category !== categoryFilter) return false;
+    if (statusFilter !== 'all' && i.status !== statusFilter) return false;
+    return true;
+  });
+
+  // Keep pagination in sync with filtered results
+  useEffect(() => {
+    if (activeTab === 'insights') {
+      setTotalItems(filteredInsights.length);
+    }
+  }, [filteredInsights.length, activeTab]);
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -155,9 +170,6 @@ const InsightsPage = () => {
     );
   }
 
-  const criticalCount = insights.filter(i => i.severity === 'critical').length;
-  const highCount = insights.filter(i => i.severity === 'high').length;
-
   const categories = [
     { id: 'all', label: 'All', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'inventory', label: 'Inventory', icon: <Package className="w-4 h-4" /> },
@@ -165,12 +177,6 @@ const InsightsPage = () => {
     { id: 'demand', label: 'Demand', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'cost', label: 'Cost', icon: <AlertTriangle className="w-4 h-4" /> },
   ];
-
-  const filteredInsights = insights.filter(i => {
-    if (categoryFilter !== 'all' && i.category !== categoryFilter) return false;
-    if (statusFilter !== 'all' && i.status !== statusFilter) return false;
-    return true;
-  });
 
   return (
     <div className="py-8 space-y-8">

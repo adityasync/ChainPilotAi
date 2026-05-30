@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 import pandas as pd
 import io
 import logging
+from datetime import date
 from typing import Optional
 
 from ..database import get_db
@@ -12,7 +13,8 @@ from ..api.auth import get_current_user
 from ..core.company_isolation import get_current_user_company_id
 from ..core.exceptions import ValidationError, AppError
 from ..models.product_inventory import Product, Inventory
-from ..models.supplier_shipment import Supplier
+from ..models.supplier_shipment import Supplier, Shipment
+from ..models.order import Order
 from .ml_integration import insight_engine
 
 router = APIRouter()
@@ -50,7 +52,7 @@ async def upload_data(
         if df.empty:
             return {
                 "message": "No rows matched the filter.",
-                "stats": {"products_created": 0, "products_updated": 0, "inventory_records_updated": 0},
+                "stats": {"products_created": 0, "products_updated": 0, "inventory_records_updated": 0, "suppliers_created": 0, "suppliers_updated": 0, "shipments_created": 0, "orders_created": 0},
                 "analysis": {"predictions_generated": 0, "insights_generated": 0},
             }
 
@@ -64,7 +66,27 @@ async def upload_data(
         df["Selling Price"] = df["Selling Price"].fillna(0).astype(float)
         df["Product Name"] = df["Product Name"].astype(str).str.strip()
 
-        # Deduplicate: keep last row per product name (later rows win)
+        # Normalize optional supplier/order columns
+        has_supplier_col = "Supplier" in df.columns
+        has_order_qty_col = "Order Qty" in df.columns
+        if has_supplier_col:
+            df["Supplier"] = df["Supplier"].astype(str).str.strip().replace({"nan": "", "None": "", "": None})
+            df["Reliability"] = pd.to_numeric(df.get("Reliability"), errors="coerce")
+            df["Lead Time"] = pd.to_numeric(df.get("Lead Time"), errors="coerce").fillna(0).astype(int)
+        if has_order_qty_col:
+            df["Order Qty"] = pd.to_numeric(df.get("Order Qty"), errors="coerce")
+            df["Order Date"] = df.get("Order Date", None)
+            df["Region"] = df.get("Region", None).astype(str).str.strip().replace({"nan": "", "None": "", "": None})
+        has_shipment_col = "Shipment Expected" in df.columns
+        if has_shipment_col:
+            df["Shipment Expected"] = df.get("Shipment Expected", None)
+            df["Shipment Actual"] = df.get("Shipment Actual", None)
+            df["Shipment Cost"] = pd.to_numeric(df.get("Shipment Cost", 0), errors="coerce").fillna(0)
+
+        # Keep full DataFrame for inventory/supplier/order processing (multi-row per product)
+        df_full = df.copy()
+
+        # Deduplicate by product name for product create/update (last row wins for price/category)
         df = df.drop_duplicates(subset=["Product Name"], keep="last").reset_index(drop=True)
 
         # ── Step 1: Bulk-read existing products for this company ──
@@ -121,9 +143,11 @@ async def upload_data(
         existing_inventory = {(inv.product_id, inv.warehouse): inv for inv in inv_result.scalars().all()}
 
         # ── Step 5: Build inventory updates and creates ──
+        # Use full DataFrame, dedup by (Product Name, Warehouse) — last row wins
+        df_inv = df_full.drop_duplicates(subset=["Product Name", "Warehouse"], keep="last")
         inv_to_create = []
         inventory_updated = 0
-        for _, row in df.iterrows():
+        for _, row in df_inv.iterrows():
             name = row["Product Name"]
             product = existing_products.get(name)
             if not product:
@@ -157,6 +181,180 @@ async def upload_data(
         # ── Step 6: Bulk insert new inventory ──
         if inv_to_create:
             await db.execute(insert(Inventory), inv_to_create)
+
+        # ── Step 7: Process Suppliers ──
+        suppliers_created = 0
+        suppliers_updated = 0
+        supplier_name_to_id: dict[str, int] = {}
+
+        if has_supplier_col:
+            # Extract unique suppliers from the full CSV (not the product-deduped one)
+            supplier_rows = df_full[df_full["Supplier"].notna()][["Supplier", "Reliability", "Lead Time"]].drop_duplicates(subset=["Supplier"])
+
+            if not supplier_rows.empty:
+                # Fetch existing suppliers for this company
+                existing_sup_result = await db.execute(
+                    select(Supplier).filter(Supplier.company_id == company_id)
+                )
+                existing_suppliers = {s.supplier_name: s for s in existing_sup_result.scalars().all()}
+
+                sup_to_create = []
+                for _, row in supplier_rows.iterrows():
+                    name = row["Supplier"]
+                    if not name:
+                        continue
+                    reliability = float(row["Reliability"]) if pd.notna(row["Reliability"]) else None
+                    lead_time = int(row["Lead Time"]) if pd.notna(row["Lead Time"]) and row["Lead Time"] > 0 else None
+
+                    if name in existing_suppliers:
+                        sup = existing_suppliers[name]
+                        if reliability is not None:
+                            sup.reliability_score = reliability
+                        if lead_time is not None:
+                            sup.avg_lead_time = lead_time
+                        supplier_name_to_id[name] = sup.id
+                        suppliers_updated += 1
+                    else:
+                        sup_to_create.append({
+                            "company_id": company_id,
+                            "supplier_name": name,
+                            "reliability_score": reliability,
+                            "avg_lead_time": lead_time,
+                        })
+
+                if sup_to_create:
+                    await db.execute(insert(Supplier), sup_to_create)
+                    await db.flush()
+                    suppliers_created = len(sup_to_create)
+
+                    # Fetch newly inserted suppliers to get their IDs
+                    new_sup_names = [d["supplier_name"] for d in sup_to_create]
+                    new_sup_result = await db.execute(
+                        select(Supplier).filter(
+                            Supplier.company_id == company_id,
+                            Supplier.supplier_name.in_(new_sup_names),
+                        )
+                    )
+                    for s in new_sup_result.scalars().all():
+                        supplier_name_to_id[s.supplier_name] = s.id
+
+        # ── Step 8: Process Shipments ──
+        shipments_created = 0
+
+        if has_shipment_col and supplier_name_to_id:
+            shipment_rows = df_full[
+                df_full["Supplier"].notna() &
+                df_full["Shipment Expected"].notna() &
+                (df_full["Shipment Expected"].astype(str).str.strip() != "")
+            ]
+
+            if not shipment_rows.empty:
+                # Fetch existing shipments for deduplication
+                existing_ship_result = await db.execute(
+                    select(Shipment)
+                    .join(Supplier, Shipment.supplier_id == Supplier.id)
+                    .filter(Supplier.company_id == company_id)
+                )
+                existing_ship_keys = set()
+                for s in existing_ship_result.scalars().all():
+                    existing_ship_keys.add((s.supplier_id, s.expected_delivery_date, s.shipping_cost))
+
+                shipments_to_create = []
+                for _, row in shipment_rows.iterrows():
+                    sup_name = row["Supplier"]
+                    sup_id = supplier_name_to_id.get(sup_name)
+                    if not sup_id:
+                        continue
+
+                    try:
+                        expected_date = pd.to_datetime(row["Shipment Expected"]).date()
+                    except Exception:
+                        continue
+
+                    actual_date = None
+                    if pd.notna(row.get("Shipment Actual")) and str(row["Shipment Actual"]).strip():
+                        try:
+                            actual_date = pd.to_datetime(row["Shipment Actual"]).date()
+                        except Exception:
+                            pass
+
+                    cost = float(row["Shipment Cost"]) if pd.notna(row["Shipment Cost"]) else 0.0
+
+                    # Dedup check
+                    key = (sup_id, expected_date, cost)
+                    if key in existing_ship_keys:
+                        continue
+
+                    shipments_to_create.append({
+                        "supplier_id": sup_id,
+                        "expected_delivery_date": expected_date,
+                        "actual_delivery_date": actual_date,
+                        "shipping_cost": cost,
+                    })
+                    existing_ship_keys.add(key)
+
+                if shipments_to_create:
+                    await db.execute(insert(Shipment), shipments_to_create)
+                    shipments_created = len(shipments_to_create)
+
+        # ── Step 9: Process Orders ──
+        orders_created = 0
+
+        if has_order_qty_col:
+            # Use full DataFrame so multiple orders per product are preserved
+            order_rows = df_full[df_full["Order Qty"].notna() & (df_full["Order Qty"] > 0)]
+
+            if not order_rows.empty:
+                # Fetch existing orders for deduplication
+                existing_orders_result = await db.execute(
+                    select(Order)
+                    .join(Product, Order.product_id == Product.id)
+                    .filter(Product.company_id == company_id)
+                )
+                existing_order_keys = set()
+                for o in existing_orders_result.scalars().all():
+                    existing_order_keys.add((o.product_id, o.order_date, o.quantity))
+
+                orders_to_create = []
+                for _, row in order_rows.iterrows():
+                    product = existing_products.get(row["Product Name"])
+                    if not product:
+                        continue
+
+                    quantity = int(row["Order Qty"])
+                    if quantity <= 0:
+                        continue
+
+                    # Parse order date
+                    order_date = None
+                    if pd.notna(row.get("Order Date")) and str(row["Order Date"]).strip():
+                        try:
+                            order_date = pd.to_datetime(row["Order Date"]).date()
+                        except Exception:
+                            order_date = date.today()
+                    else:
+                        order_date = date.today()
+
+                    region = row.get("Region") if pd.notna(row.get("Region")) else None
+                    if region and not region.strip():
+                        region = None
+
+                    # Dedup check
+                    key = (product.id, order_date, quantity)
+                    if key in existing_order_keys:
+                        continue
+
+                    orders_to_create.append({
+                        "product_id": product.id,
+                        "order_date": order_date,
+                        "quantity": quantity,
+                        "region": region,
+                    })
+                    existing_order_keys.add(key)
+
+                if orders_to_create:
+                    await db.execute(insert(Order), orders_to_create)
+                    orders_created = len(orders_to_create)
 
         # Single commit for everything
         await db.commit()
@@ -217,6 +415,10 @@ async def upload_data(
                 "products_created": products_created,
                 "products_updated": products_updated,
                 "inventory_records_updated": inventory_updated,
+                "suppliers_created": suppliers_created,
+                "suppliers_updated": suppliers_updated,
+                "shipments_created": shipments_created,
+                "orders_created": orders_created,
             },
             "analysis": {
                 "predictions_generated": analysis_results["predictions_count"],

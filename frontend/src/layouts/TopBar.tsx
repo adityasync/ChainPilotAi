@@ -37,7 +37,7 @@ const TopBar = () => {
 
         {/* User info */}
         <div className="w-8 h-8 rounded-full bg-[#1d1d1f] dark:bg-white flex items-center justify-center">
-          <span className="text-white text-sm font-medium">
+          <span className="text-white dark:text-[#1d1d1f] text-sm font-medium">
             {user?.email?.charAt(0).toUpperCase() || 'U'}
           </span>
         </div>

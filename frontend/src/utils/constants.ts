@@ -192,7 +192,7 @@ export const DATE_FORMATS = {
 // Threshold values for supply chain metrics
 export const THRESHOLDS = {
     // Stock thresholds (as percentages of reorder point)
-    STOCK_CRITICAL: 0.25, // Below 25% of reorder point
+    STOCK_CRITICAL: 0.5, // Below 50% of reorder point
     STOCK_LOW: 0.5, // Below 50% of reorder point
 
     // Supplier reliability thresholds
