@@ -2,9 +2,27 @@ import { useEffect, useRef, useState } from 'react';
 import { Upload, Cpu, MessageSquare } from 'lucide-react';
 
 const steps = [
-  { number: '01', icon: Upload, title: 'Connect your data', desc: 'Upload a CSV with your products, inventory, and suppliers. Everything is ingested automatically.', color: '#0071e3' },
-  { number: '02', icon: Cpu, title: 'ML analyzes patterns', desc: 'Four trained models run simultaneously — forecasting, classifying, predicting, and detecting.', color: '#5856d6' },
-  { number: '03', icon: MessageSquare, title: 'AI explains everything', desc: 'Ask questions in plain English. Get structured insights with severity levels and actions.', color: '#34c759' },
+  {
+    number: '01',
+    icon: Upload,
+    title: 'Connect your data',
+    desc: 'Upload a CSV with your products, inventory, and suppliers. Everything is ingested automatically.',
+    color: '#0a84ff',
+  },
+  {
+    number: '02',
+    icon: Cpu,
+    title: 'ML analyzes patterns',
+    desc: 'Four trained models run simultaneously — forecasting, classifying, predicting, and detecting.',
+    color: '#5e5ce6',
+  },
+  {
+    number: '03',
+    icon: MessageSquare,
+    title: 'AI explains everything',
+    desc: 'Ask questions in plain English. Get structured insights with severity levels and actions.',
+    color: '#30d158',
+  },
 ];
 
 const HowItWorks = () => {
@@ -13,7 +31,9 @@ const HowItWorks = () => {
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      ([entry]) => {
+        if (entry.isIntersecting) setVisible(true);
+      },
       { threshold: 0.12 }
     );
     if (ref.current) observer.observe(ref.current);
@@ -21,36 +41,71 @@ const HowItWorks = () => {
   }, []);
 
   return (
-    <section id="how-it-works" ref={ref} className="py-[var(--space-section)] px-6 bg-[#f5f5f7] dark:bg-[#0a0a0a]">
-      <div className="max-w-[980px] mx-auto">
-        <div className="text-center mb-16">
-          <h2 className={`text-[clamp(32px,5vw,52px)] font-semibold tracking-[-0.03em] text-[#1d1d1f] dark:text-white mb-3 text-balance transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
-            Three steps to clarity.
+    <section id="how-it-works" ref={ref} className="py-[var(--space-section)] px-6 bg-black">
+      <div className="max-w-[1200px] mx-auto">
+        {/* Section header */}
+        <div className="text-center mb-20">
+          <h2
+            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-white leading-[1.05] mb-4 transition-all duration-700 ease-out ${
+              visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`}
+          >
+            Three steps
+            <br />
+            to clarity.
           </h2>
-          <p className={`text-[16px] text-[#86868b] dark:text-[#a1a1a6] max-w-md mx-auto transition-all duration-700 ease-out delay-75 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+          <p
+            className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light max-w-[500px] mx-auto transition-all duration-700 ease-out delay-100 ${
+              visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+            }`}
+          >
             From raw data to actionable intelligence in minutes.
           </p>
         </div>
 
+        {/* Steps */}
         <div className="relative">
           {/* Connecting line */}
-          <div className={`hidden lg:block absolute top-10 left-[calc(16.67%+20px)] right-[calc(16.67%+20px)] h-px bg-gradient-to-r from-transparent via-black/[0.08] dark:via-white/[0.08] to-transparent transition-all duration-1000 ${visible ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'}`} />
+          <div
+            className={`hidden lg:block absolute top-[60px] left-[calc(16.67%+40px)] right-[calc(16.67%+40px)] h-px transition-all duration-1000 ease-out ${
+              visible ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
+            }`}
+            style={{
+              background:
+                'linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)',
+            }}
+          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8">
             {steps.map((step, i) => (
               <div
                 key={step.number}
-                className={`relative text-center transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}
-                style={{ transitionDelay: `${150 + i * 120}ms` }}
+                className={`relative text-center transition-all duration-700 ease-out ${
+                  visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: `${200 + i * 150}ms` }}
               >
-                <div className="relative inline-flex items-center justify-center w-[72px] h-[72px] rounded-full bg-white dark:bg-[#1c1c1e] border border-black/[0.04] dark:border-white/[0.06] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.3)] mb-5">
-                  <step.icon className="w-7 h-7" style={{ color: step.color }} />
-                  <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] text-[9px] font-bold">
+                {/* Step icon */}
+                <div className="relative inline-flex items-center justify-center w-[80px] h-[80px] rounded-[20px] bg-white/[0.04] border border-white/[0.06] mb-6">
+                  <step.icon className="w-8 h-8" style={{ color: step.color }} />
+                  <span
+                    className="absolute -top-2 -right-2 w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold"
+                    style={{
+                      backgroundColor: step.color,
+                      color: '#000',
+                    }}
+                  >
                     {step.number}
                   </span>
                 </div>
-                <h3 className="text-[16px] font-semibold text-[#1d1d1f] dark:text-white mb-2">{step.title}</h3>
-                <p className="text-[14px] leading-[1.55] text-[#86868b] dark:text-[#a1a1a6] max-w-[280px] mx-auto">{step.desc}</p>
+
+                {/* Step content */}
+                <h3 className="text-[18px] font-semibold text-white mb-3 tracking-[-0.01em]">
+                  {step.title}
+                </h3>
+                <p className="text-[15px] leading-[1.6] text-white/40 font-light max-w-[300px] mx-auto">
+                  {step.desc}
+                </p>
               </div>
             ))}
           </div>
