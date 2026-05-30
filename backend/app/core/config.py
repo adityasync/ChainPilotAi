@@ -3,7 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is required")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://aditya@localhost/supply_chain_db")
@@ -15,7 +17,7 @@ BACKEND_CORS_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
-ML_ARTIFACTS_PATH = os.getenv("ML_ARTIFACTS_PATH", "backend/app/ml/models")
+ML_ARTIFACTS_PATH = os.getenv("ML_ARTIFACTS_PATH", "app/ml/models")
 AI_PROVIDER = os.getenv("AI_PROVIDER", "glm")
 AI_MODEL = os.getenv("AI_MODEL", "glm-4.5-flash")
 AI_FALLBACK_MODEL = os.getenv("AI_FALLBACK_MODEL", "glm-4.7")

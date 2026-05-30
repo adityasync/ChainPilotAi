@@ -1,6 +1,8 @@
 import json
-from sqlalchemy.orm import Session
-from ...core.exceptions import ServiceUnavailableError
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ...core.exceptions import ServiceUnavailableError, AppError
 from ...models.ml_models import Insight
 from ...core.config import AI_MODEL
 from .client import GLMClient
@@ -9,7 +11,7 @@ from .prompts import insight_generation_prompt
 INSIGHT_SYSTEM_PROMPT = insight_generation_prompt()
 
 
-def generate_ai_insights(client: GLMClient, db: Session, company_id: int, context: dict) -> list[dict]:
+async def generate_ai_insights(client: GLMClient, db: AsyncSession, company_id: int, context: dict) -> list[dict]:
     context_str = json.dumps(context, default=str)
 
     try:
@@ -25,6 +27,7 @@ def generate_ai_insights(client: GLMClient, db: Session, company_id: int, contex
         if not content:
             raise ValueError("Empty response from AI")
 
+        # Strip markdown fences if present
         if content.strip().startswith("```json"):
             content = content.strip()[7:-3].strip()
         elif content.strip().startswith("```"):
@@ -37,15 +40,20 @@ def generate_ai_insights(client: GLMClient, db: Session, company_id: int, contex
             raise ValueError("Expected a JSON array of insights")
 
     except Exception as e:
-        raise ServiceUnavailableError(f"Failed to generate or parse insights: {str(e)}")
+        raise AppError(code="AI_PARSE_ERROR", message=f"Failed to generate or parse insights: {str(e)}", status_code=502)
 
-    db.query(Insight).filter(Insight.company_id == company_id, Insight.category == "ai_generated").delete()
+    # Delete existing AI-generated insights for this company
+    result = await db.execute(
+        select(Insight).filter(Insight.company_id == company_id, Insight.category == "ai_generated")
+    )
+    for insight in result.scalars().all():
+        await db.delete(insight)
 
     created_insights = []
     for item in insights_data:
         severity = item.get("severity", "medium").lower()
         if severity not in ["low", "medium", "high"]:
-            continue
+            continue  # Skip insights with invalid severity
 
         insight = Insight(
             company_id=company_id,
@@ -60,7 +68,7 @@ def generate_ai_insights(client: GLMClient, db: Session, company_id: int, contex
         db.add(insight)
         created_insights.append(insight)
 
-    db.commit()
+    await db.commit()
 
     return [
         {

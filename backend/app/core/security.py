@@ -4,12 +4,19 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from .config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing context — bcrypt cost factor >= 12 per NFR-SEC-01
+_BCRYPT_ROUNDS = 12
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=_BCRYPT_ROUNDS,
+)
 
 # Secret key for JWT encoding/decoding - should be stored in environment variables
 SECRET_KEY = SECRET_KEY
 ALGORITHM = ALGORITHM
+
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """

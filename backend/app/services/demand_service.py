@@ -3,21 +3,23 @@ from datetime import date, timedelta
 from math import ceil
 from typing import Any
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..core.exceptions import NotFoundError
-from ..ml.models.statistical_forecaster import forecast_demand, _aggregate_orders_by_month
+from ..ml.models.statistical_forecaster import forecast_demand, compute_forecast_accuracy
+from ..ml.models.ml_demand_forecaster import MLDemandForecaster, _is_sufficient_data
 from ..models.ml_models import Prediction
 from ..models.order import Order
-from ..models.product_inventory import Product
+from ..models.product_inventory import Product, Inventory
 
 
-def _get_product(db: Session, product_id: int, company_id: int) -> Product:
-    product = (
-        db.query(Product)
-        .filter(Product.id == product_id, Product.company_id == company_id)
-        .first()
+async def _get_product(db: AsyncSession, product_id: int, company_id: int) -> Product:
+    result = await db.execute(
+        select(Product).options(selectinload(Product.inventory_items)).filter(Product.id == product_id, Product.company_id == company_id)
     )
+    product = result.scalars().first()
     if not product:
         raise NotFoundError("Product", product_id)
     return product
@@ -40,25 +42,27 @@ def _aggregate_period(order_date: date, period: str) -> tuple[date, str]:
     return period_start, label
 
 
-def _fetch_orders_raw(db: Session, company_id: int, product_id: int) -> list[tuple[date, int]]:
-    orders = (
-        db.query(Order.order_date, Order.quantity)
+async def _fetch_orders_raw(
+    db: AsyncSession, company_id: int, product_id: int
+) -> list[tuple[date, int]]:
+    """Fetch raw (order_date, quantity) tuples for a product."""
+    result = await db.execute(
+        select(Order.order_date, Order.quantity)
         .join(Product, Order.product_id == Product.id)
         .filter(Order.product_id == product_id, Product.company_id == company_id)
         .order_by(Order.order_date.asc())
-        .all()
     )
-    return [(row[0], row[1]) for row in orders]
+    return [(row[0], row[1]) for row in result.all()]
 
 
-def get_demand_history(
-    db: Session,
+async def get_demand_history(
+    db: AsyncSession,
     company_id: int,
     product_id: int,
     period: str = "month",
 ) -> dict[str, Any]:
-    product = _get_product(db, product_id, company_id)
-    raw_orders = _fetch_orders_raw(db, company_id, product_id)
+    product = await _get_product(db, product_id, company_id)
+    raw_orders = await _fetch_orders_raw(db, company_id, product_id)
 
     buckets: dict[date, dict[str, Any]] = defaultdict(
         lambda: {"label": "", "period_start": None, "quantity": 0}
@@ -80,8 +84,8 @@ def get_demand_history(
     }
 
 
-def _persist_forecast(
-    db: Session,
+async def _persist_forecast(
+    db: AsyncSession,
     company_id: int,
     product_id: int,
     forecast_value: float,
@@ -94,21 +98,23 @@ def _persist_forecast(
         prediction_value=float(forecast_value),
     )
     db.add(prediction)
-    db.commit()
-    db.refresh(prediction)
+    await db.commit()
+    await db.refresh(prediction)
     return prediction
 
 
-def get_or_create_demand_forecast(
-    db: Session,
+async def get_or_create_demand_forecast(
+    db: AsyncSession,
     company_id: int,
     product_id: int,
     forecast_date: date,
 ) -> dict[str, Any]:
-    _get_product(db, product_id, company_id)
+    """Generate a demand forecast. Tries ML first, falls back to statistical."""
+    await _get_product(db, product_id, company_id)
 
-    latest_prediction = (
-        db.query(Prediction)
+    # Check for a recent persisted forecast (within last 24 hours)
+    result = await db.execute(
+        select(Prediction)
         .filter(
             Prediction.company_id == company_id,
             Prediction.entity_type == "product",
@@ -116,8 +122,8 @@ def get_or_create_demand_forecast(
             Prediction.prediction_type == "demand_forecast",
         )
         .order_by(Prediction.created_at.desc())
-        .first()
     )
+    latest_prediction = result.scalars().first()
 
     if latest_prediction and latest_prediction.created_at:
         from datetime import datetime, timezone
@@ -131,11 +137,40 @@ def get_or_create_demand_forecast(
                 "method": "statistical",
             }
 
-    raw_orders = _fetch_orders_raw(db, company_id, product_id)
+    # Fetch raw order history
+    raw_orders = await _fetch_orders_raw(db, company_id, product_id)
+
+    # Try ML forecaster first (needs ≥12 months of data)
+    if _is_sufficient_data(raw_orders):
+        try:
+            ml = MLDemandForecaster()
+            ml_fc = ml.forecast(raw_orders, periods_ahead=6)
+            forecast_value = ml_fc["ml_forecast_value"]
+
+            prediction = await _persist_forecast(db, company_id, product_id, forecast_value)
+            return {
+                "quantity": float(forecast_value),
+                "created_at": prediction.created_at.isoformat() if prediction.created_at else None,
+                "forecast_date": forecast_date.isoformat(),
+                "source": "ml",
+                "method": ml_fc["method"],
+                "confidence_lower": ml_fc["ml_confidence_lower"],
+                "confidence_upper": ml_fc["ml_confidence_upper"],
+                "trend_slope": ml_fc["trend_slope"],
+                "demand_pattern": ml_fc["demand_pattern"],
+                "multi_step_forecast": ml_fc["multi_step_forecast"],
+                "anomalies": ml_fc["anomalies"],
+                "feature_importance": ml_fc["feature_importance"],
+            }
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"ML forecast failed for product {product_id}, falling back to statistical: {e}")
+
+    # Fallback: statistical forecaster
     fc = forecast_demand(raw_orders, periods_ahead=1)
     forecast_value = fc["forecast_value"]
 
-    prediction = _persist_forecast(db, company_id, product_id, forecast_value)
+    prediction = await _persist_forecast(db, company_id, product_id, forecast_value)
     return {
         "quantity": float(forecast_value),
         "created_at": prediction.created_at.isoformat() if prediction.created_at else None,
@@ -148,16 +183,16 @@ def get_or_create_demand_forecast(
     }
 
 
-def get_demand_summary(
-    db: Session,
+async def get_demand_summary(
+    db: AsyncSession,
     company_id: int,
     product_id: int,
     period: str = "month",
     forecast_date: date | None = None,
 ) -> dict[str, Any]:
-    product = _get_product(db, product_id, company_id)
-    history = get_demand_history(db, company_id, product_id, period)
-    forecast = get_or_create_demand_forecast(
+    product = await _get_product(db, product_id, company_id)
+    history = await get_demand_history(db, company_id, product_id, period)
+    forecast = await get_or_create_demand_forecast(
         db,
         company_id,
         product_id,
@@ -214,19 +249,21 @@ def get_demand_summary(
     }
 
 
-def get_portfolio_demand_summary(
-    db: Session,
+async def get_portfolio_demand_summary(
+    db: AsyncSession,
     company_id: int,
     period: str = "month",
 ) -> dict[str, Any]:
-    orders = (
-        db.query(Order.order_date, Order.quantity, Order.product_id)
+    """Aggregate demand across all products for the company."""
+    result = await db.execute(
+        select(Order.order_date, Order.quantity, Order.product_id)
         .join(Product, Order.product_id == Product.id)
         .filter(Product.company_id == company_id)
         .order_by(Order.order_date.asc())
-        .all()
     )
+    orders = result.all()
 
+    # Aggregate by period
     total_buckets: dict[date, int] = defaultdict(int)
     product_totals: dict[int, int] = defaultdict(int)
 
@@ -235,6 +272,7 @@ def get_portfolio_demand_summary(
         total_buckets[period_start] += quantity
         product_totals[product_id] += quantity
 
+    # Build total demand series
     total_series = []
     for period_start in sorted(total_buckets.keys()):
         _, label = _aggregate_period(period_start, period)
@@ -244,25 +282,30 @@ def get_portfolio_demand_summary(
             "quantity": total_buckets[period_start],
         })
 
+    # Compute change percent
     current_qty = total_series[-1]["quantity"] if total_series else 0
     prev_qty = total_series[-2]["quantity"] if len(total_series) > 1 else 0
     change_percent = round(((current_qty - prev_qty) / prev_qty) * 100, 1) if prev_qty > 0 else 0.0
 
+    # Top products by volume
     top_product_ids = sorted(product_totals, key=product_totals.get, reverse=True)[:8]
     top_products_data = []
     if top_product_ids:
-        prod_map = {
-            p.id: p.product_name
-            for p in db.query(Product).filter(Product.id.in_(top_product_ids), Product.company_id == company_id).all()
-        }
-        from ..models.product_inventory import Inventory
-        inv_rows = (
-            db.query(Inventory.product_id, func.sum(Inventory.current_stock).label("current_stock"))
+        prod_result = await db.execute(
+            select(Product.id, Product.product_name)
+            .filter(Product.id.in_(top_product_ids), Product.company_id == company_id)
+        )
+        prod_map = {pid: pname for pid, pname in prod_result.all()}
+
+        inv_result = await db.execute(
+            select(
+                Inventory.product_id,
+                func.sum(Inventory.current_stock).label("current_stock"),
+            )
             .filter(Inventory.product_id.in_(top_product_ids))
             .group_by(Inventory.product_id)
-            .all()
         )
-        inv_map = {pid: int(stock) for pid, stock in inv_rows}
+        inv_map = {pid: int(stock) for pid, stock in inv_result.all()}
 
         for pid in top_product_ids:
             top_products_data.append({
@@ -272,13 +315,22 @@ def get_portfolio_demand_summary(
                 "current_stock": inv_map.get(pid, 0),
             })
 
-    from sqlalchemy import func
-    products_tracked = (
-        db.query(func.count(func.distinct(Order.product_id)))
+    products_tracked = await db.scalar(
+        select(func.count(func.distinct(Order.product_id)))
         .join(Product, Order.product_id == Product.id)
         .filter(Product.company_id == company_id)
-        .scalar()
     ) or 0
+
+    # Compute portfolio-level forecast accuracy
+    # Get all products with orders
+    all_product_ids = list(product_totals.keys())
+    portfolio_accuracy = await _compute_portfolio_accuracy(db, company_id, all_product_ids)
+
+    # Classify demand patterns across products (best-effort, don't fail portfolio)
+    try:
+        demand_patterns = await get_demand_patterns_summary(db, company_id)
+    except Exception:
+        demand_patterns = {}
 
     return {
         "period": period,
@@ -289,16 +341,96 @@ def get_portfolio_demand_summary(
         "products_tracked": products_tracked,
         "demand_series": total_series,
         "top_products": top_products_data,
+        "forecast_accuracy": portfolio_accuracy,
+        "demand_patterns": demand_patterns,
     }
 
 
-def get_forecast_accuracy(
-    db: Session,
+async def _compute_portfolio_accuracy(
+    db: AsyncSession,
+    company_id: int,
+    product_ids: list[int],
+) -> dict[str, Any]:
+    """Compute aggregate forecast accuracy across products using backtest."""
+    if not product_ids:
+        return {"mape": None, "bias": None, "products_with_data": 0}
+
+    total_mape = 0.0
+    total_bias = 0.0
+    products_with_data = 0
+
+    for pid in product_ids[:20]:  # cap at 20 products for performance
+        raw_orders = await _fetch_orders_raw(db, company_id, pid)
+        if len(raw_orders) < 6:
+            continue
+
+        # Backtest: forecast each month using only prior data
+        from ..ml.models.statistical_forecaster import _aggregate_orders_by_month
+        _, quantities = _aggregate_orders_by_month(raw_orders)
+
+        if len(quantities) < 6:
+            continue
+
+        errors = []
+        # Walk-forward: use months 1..N-1 to predict month N
+        for i in range(4, len(quantities)):
+            prior_orders = raw_orders[:_count_orders_up_to_month(raw_orders, i)]
+            if not prior_orders:
+                continue
+            fc = forecast_demand(prior_orders, periods_ahead=1)
+            actual = quantities[i]
+            if actual > 0:
+                pct_err = abs(fc["forecast_value"] - actual) / actual * 100
+                errors.append(pct_err)
+
+        if errors:
+            total_mape += sum(errors) / len(errors)
+            products_with_data += 1
+
+    if products_with_data == 0:
+        return {"mape": None, "bias": None, "products_with_data": 0}
+
+    avg_mape = round(total_mape / products_with_data, 1)
+    return {
+        "mape": avg_mape,
+        "bias": None,
+        "products_with_data": products_with_data,
+    }
+
+
+def _count_orders_up_to_month(orders: list[tuple[date, int]], month_index: int) -> int:
+    """Count how many orders fall in the first N months."""
+    from ..ml.models.statistical_forecaster import _aggregate_orders_by_month
+    labels, _ = _aggregate_orders_by_month(orders)
+    if month_index >= len(labels):
+        return len(orders)
+
+    # Find the cutoff date for month_index
+    months_seen: dict[date, int] = defaultdict(int)
+    for order_date, qty in orders:
+        ms = order_date.replace(day=1)
+        months_seen[ms] += qty
+
+    sorted_months = sorted(months_seen.keys())
+    if month_index >= len(sorted_months):
+        return len(orders)
+
+    cutoff = sorted_months[month_index]
+    count = 0
+    for order_date, _ in orders:
+        if order_date < cutoff:
+            count += 1
+    return count
+
+
+async def get_forecast_accuracy(
+    db: AsyncSession,
     company_id: int,
     product_id: int,
 ) -> dict[str, Any]:
-    product = _get_product(db, product_id, company_id)
-    raw_orders = _fetch_orders_raw(db, company_id, product_id)
+    """Compute forecast accuracy using walk-forward backtest on real order history."""
+    product = await _get_product(db, product_id, company_id)
+    raw_orders = await _fetch_orders_raw(db, company_id, product_id)
 
     if len(raw_orders) < 6:
         return {
@@ -312,7 +444,16 @@ def get_forecast_accuracy(
             "matched_predictions": 0,
         }
 
+    # Walk-forward backtest
+    from ..ml.models.statistical_forecaster import _aggregate_orders_by_month
     _, quantities = _aggregate_orders_by_month(raw_orders)
+
+    # Pre-compute month labels once
+    months_seen: dict[date, int] = defaultdict(int)
+    for order_date, qty in raw_orders:
+        ms = order_date.replace(day=1)
+        months_seen[ms] += qty
+    sorted_months = sorted(months_seen.keys())
 
     accuracy_data = []
     total_pct_error = 0.0
@@ -320,13 +461,9 @@ def get_forecast_accuracy(
     total_sq_error = 0.0
     matched = 0
 
-    months_seen: dict[date, int] = defaultdict(int)
-    for order_date, qty in raw_orders:
-        ms = order_date.replace(day=1)
-        months_seen[ms] += qty
-    sorted_months = sorted(months_seen.keys())
-
+    # Need at least 4 months of history before we can forecast
     for i in range(4, len(quantities)):
+        # Use orders up to month i to forecast month i
         cutoff_count = _count_orders_up_to_month(raw_orders, i)
         prior_orders = raw_orders[:cutoff_count]
         if not prior_orders:
@@ -339,6 +476,7 @@ def get_forecast_accuracy(
             predicted = fc["forecast_value"]
             error = predicted - actual
             pct_error = abs(error) / actual * 100
+
             label = sorted_months[i].strftime("%b %Y") if i < len(sorted_months) else f"Month {i}"
 
             accuracy_data.append({
@@ -358,7 +496,7 @@ def get_forecast_accuracy(
     bias = round(total_bias / matched, 1) if matched > 0 else None
     rmse = round(math.sqrt(total_sq_error / matched), 1) if matched > 0 else None
 
-    return {
+    result = {
         "product_id": product_id,
         "product_name": product.product_name,
         "mape": mape,
@@ -369,24 +507,160 @@ def get_forecast_accuracy(
         "matched_predictions": matched,
     }
 
+    # Add ML accuracy comparison if sufficient data
+    if _is_sufficient_data(raw_orders):
+        try:
+            ml = MLDemandForecaster()
+            ml_mape, ml_bias, ml_rmse, ml_accuracy_data = _ml_walk_forward_accuracy(raw_orders)
+            result["ml_mape"] = ml_mape
+            result["ml_bias"] = ml_bias
+            result["ml_rmse"] = ml_rmse
+            result["ml_accuracy_data"] = ml_accuracy_data[-12:]
+        except Exception:
+            pass  # ML comparison is optional
 
-def _count_orders_up_to_month(orders: list[tuple[date, int]], month_index: int) -> int:
-    labels, _ = _aggregate_orders_by_month(orders)
-    if month_index >= len(labels):
-        return len(orders)
+    return result
 
+
+def _ml_walk_forward_accuracy(
+    orders: list[tuple[date, int]],
+) -> tuple[float | None, float | None, float | None, list[dict]]:
+    """Run walk-forward backtest using ML forecaster."""
+    import math
+    from ..ml.models.statistical_forecaster import _aggregate_orders_by_month
+
+    _, quantities = _aggregate_orders_by_month(orders)
+
+    # Pre-compute month labels once (not inside the loop)
     months_seen: dict[date, int] = defaultdict(int)
     for order_date, qty in orders:
         ms = order_date.replace(day=1)
         months_seen[ms] += qty
-
     sorted_months = sorted(months_seen.keys())
-    if month_index >= len(sorted_months):
-        return len(orders)
 
-    cutoff = sorted_months[month_index]
-    count = 0
-    for order_date, _ in orders:
-        if order_date < cutoff:
-            count += 1
-    return count
+    accuracy_data = []
+    total_pct_error = 0.0
+    total_bias = 0.0
+    total_sq_error = 0.0
+    matched = 0
+
+    for i in range(12, len(quantities)):
+        cutoff_count = _count_orders_up_to_month(orders, i)
+        prior_orders = orders[:cutoff_count]
+        if len(prior_orders) < 12:
+            continue
+
+        try:
+            # Train a new forecaster per step (walk-forward requires retraining)
+            ml = MLDemandForecaster()
+            ml_fc = ml.forecast(prior_orders, periods_ahead=1)
+            predicted = ml_fc["forecast_value"]
+        except Exception:
+            continue
+
+        actual = quantities[i]
+        if actual > 0:
+            error = predicted - actual
+            pct_error = abs(error) / actual * 100
+
+            label = sorted_months[i].strftime("%b %Y") if i < len(sorted_months) else f"Month {i}"
+
+            accuracy_data.append({
+                "label": label,
+                "predicted": round(predicted),
+                "actual": int(actual),
+                "error": round(error),
+                "pct_error": round(pct_error, 1),
+            })
+            total_pct_error += pct_error
+            total_bias += error
+            total_sq_error += error ** 2
+            matched += 1
+
+    mape = round(total_pct_error / matched, 1) if matched > 0 else None
+    bias = round(total_bias / matched, 1) if matched > 0 else None
+    rmse = round(math.sqrt(total_sq_error / matched), 1) if matched > 0 else None
+
+    return mape, bias, rmse, accuracy_data
+
+
+async def get_demand_insights(
+    db: AsyncSession,
+    company_id: int,
+    product_id: int,
+) -> dict[str, Any]:
+    """Get ML-powered demand insights for a product.
+
+    Returns demand pattern classification, anomaly detection,
+    multi-step forecast, and feature importance.
+    """
+    product = await _get_product(db, product_id, company_id)
+    raw_orders = await _fetch_orders_raw(db, company_id, product_id)
+
+    if not _is_sufficient_data(raw_orders):
+        return {
+            "product_id": product_id,
+            "product_name": product.product_name,
+            "ml_available": False,
+            "message": "Need at least 12 months of order history for ML insights.",
+            "demand_pattern": None,
+            "anomalies": [],
+            "multi_step_forecast": [],
+            "feature_importance": {},
+        }
+
+    try:
+        ml = MLDemandForecaster()
+        fc = ml.forecast(raw_orders, periods_ahead=6)
+
+        return {
+            "product_id": product_id,
+            "product_name": product.product_name,
+            "ml_available": True,
+            "demand_pattern": fc["demand_pattern"],
+            "anomalies": fc["anomalies"],
+            "multi_step_forecast": fc["multi_step_forecast"],
+            "feature_importance": fc["feature_importance"],
+        }
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"ML insights failed for product {product_id}: {e}")
+        return {
+            "product_id": product_id,
+            "product_name": product.product_name,
+            "ml_available": False,
+            "message": f"ML analysis failed: {str(e)}",
+            "demand_pattern": None,
+            "anomalies": [],
+            "multi_step_forecast": [],
+            "feature_importance": {},
+        }
+
+
+async def get_demand_patterns_summary(
+    db: AsyncSession,
+    company_id: int,
+) -> dict[str, int]:
+    """Classify demand patterns across all products for the company."""
+    # Get all product IDs with orders
+    result = await db.execute(
+        select(func.distinct(Order.product_id))
+        .join(Product, Order.product_id == Product.id)
+        .filter(Product.company_id == company_id)
+    )
+    product_ids = [row[0] for row in result.all()]
+
+    patterns: dict[str, int] = defaultdict(int)
+    for pid in product_ids[:20]:  # cap at 20 for performance
+        raw_orders = await _fetch_orders_raw(db, company_id, pid)
+        if not _is_sufficient_data(raw_orders):
+            patterns["insufficient_data"] += 1
+            continue
+        try:
+            ml = MLDemandForecaster()
+            pattern_info = ml.classify_demand_pattern(raw_orders)
+            patterns[pattern_info["pattern"]] += 1
+        except Exception:
+            patterns["unknown"] += 1
+
+    return dict(patterns)

@@ -6,6 +6,7 @@ venv/
 .venv/
 .env
 *.log
+*.db
 
 # Node
 node_modules/
@@ -21,10 +22,20 @@ dist-ssr/
 .DS_Store
 Thumbs.db
 
-# Database
-*.db
-*.sqlite
+# ML artifacts (large binary files)
+ml/models/*.pkl
+ml/models/*.joblib
 
-# ML artifacts
-*.pkl
-*.joblib
+# Test
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Data (keep schema.sql, skip large CSVs)
+*.csv
+
+# Vercel
+.vercel/
+
+# Render
+render-deploy/

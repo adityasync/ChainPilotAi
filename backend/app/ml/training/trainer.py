@@ -6,6 +6,7 @@ from ..models.demand_forecasting import DemandForecastingModel
 from ..models.inventory_risk_classifier import InventoryRiskClassifier
 from ..models.supplier_delay_predictor import SupplierDelayPredictor
 from ..models.cost_anomaly_detector import CostAnomalyDetector
+from ..models.ml_demand_forecaster import MLDemandForecaster, _is_sufficient_data
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +167,69 @@ class MLTrainer:
 
         logger.info("Cost anomaly detector training completed.")
         return results
+
+    async def train_ml_demand_forecaster(self, db, company_id: int) -> Dict[str, Any]:
+        """Train per-product ML demand forecasters for a company.
+
+        Args:
+            db: AsyncSession database session
+            company_id: Company to train models for
+
+        Returns:
+            Training results summary
+        """
+        from sqlalchemy import select
+        from ...models.order import Order
+        from ...models.product_inventory import Product
+
+        logger.info(f"Starting ML demand forecaster training for company {company_id}...")
+
+        # Get all products with orders
+        result = await db.execute(
+            select(Product.id, Product.product_name)
+            .filter(Product.company_id == company_id)
+        )
+        products = result.all()
+
+        demand_ml_dir = os.path.join(self.model_dir, "demand_ml")
+        os.makedirs(demand_ml_dir, exist_ok=True)
+
+        trained = 0
+        skipped = 0
+        failed = 0
+
+        for product_id, product_name in products:
+            # Fetch order history
+            orders_result = await db.execute(
+                select(Order.order_date, Order.quantity)
+                .filter(Order.product_id == product_id)
+                .order_by(Order.order_date.asc())
+            )
+            raw_orders = [(row[0], row[1]) for row in orders_result.all()]
+
+            if not _is_sufficient_data(raw_orders):
+                skipped += 1
+                continue
+
+            try:
+                ml = MLDemandForecaster()
+                metrics = ml.train(raw_orders)
+                model_path = os.path.join(demand_ml_dir, f"product_{product_id}.pkl")
+                ml.save_model(model_path)
+                trained += 1
+                logger.info(f"Trained ML forecaster for '{product_name}' (id={product_id}): MAPE={metrics.get('mape')}")
+            except Exception as e:
+                failed += 1
+                logger.warning(f"Failed to train ML forecaster for '{product_name}' (id={product_id}): {e}")
+
+        result_summary = {
+            "trained": trained,
+            "skipped": skipped,
+            "failed": failed,
+            "total_products": len(products),
+        }
+        logger.info(f"ML demand forecaster training complete: {result_summary}")
+        return result_summary
 
     def train_all_models(self) -> Dict[str, Any]:
         """

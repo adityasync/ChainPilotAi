@@ -49,8 +49,9 @@ export function useApi<T>(
         error: null,
       });
     } catch (err) {
-      const axiosError = err as AxiosError<{ detail?: string }>;
+      const axiosError = err as AxiosError<{ detail?: string; error?: { message?: string } }>;
       const errorMessage =
+        axiosError.response?.data?.error?.message ||
         axiosError.response?.data?.detail ||
         axiosError.message ||
         'An unexpected error occurred';
@@ -119,8 +120,9 @@ export function useApiWithParams<T, P extends unknown[]>(
       });
       return response.data;
     } catch (err) {
-      const axiosError = err as AxiosError<{ detail?: string }>;
+      const axiosError = err as AxiosError<{ detail?: string; error?: { message?: string } }>;
       const errorMessage =
+        axiosError.response?.data?.error?.message ||
         axiosError.response?.data?.detail ||
         axiosError.message ||
         'An unexpected error occurred';

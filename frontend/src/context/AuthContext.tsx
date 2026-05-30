@@ -1,37 +1,36 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState } from 'react';
+import type { ReactNode } from 'react';
 import { authAPI } from '../services/apiService';
 
 interface User {
   id: number;
   email: string;
   company_id: number;
+  company_name?: string;
+  industry?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, company_name: string, industry?: string) => Promise<boolean>;
+  register: (email: string, password: string, company_name: string, industry?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
+  setUser: (user: User | null) => void;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Check for existing token in localStorage on app load
-    const storedToken = localStorage.getItem('token');
+  const [user, setUser] = useState<User | null>(() => {
     const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [token, setToken] = useState<string | null>(() => {
+    return localStorage.getItem('token');
+  });
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -56,23 +55,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const register = async (email: string, password: string, company_name: string, industry?: string): Promise<boolean> => {
+  const register = async (email: string, password: string, company_name: string, industry?: string) => {
     try {
       const response = await authAPI.register(email, password, company_name, industry);
 
       if (response.status === 200) {
         // Automatically log in after registration
-        return login(email, password);
+        const loginOk = await login(email, password);
+        return loginOk ? { ok: true as const } : { ok: false as const, error: 'Account created but login failed. Please sign in.' };
       }
 
-      return false;
-    } catch (error) {
+      return { ok: false as const, error: 'Could not create account. Please try again.' };
+    } catch (error: any) {
       console.error('Registration error:', error);
-      return false;
+      const backendMsg = error?.response?.data?.error?.message;
+      return { ok: false as const, error: backendMsg || 'Something went wrong. Please try again.' };
     }
   };
 
+  const refreshUser = async (): Promise<void> => {
+    const userResponse = await authAPI.getCurrentUser();
+    setUser(userResponse.data);
+    localStorage.setItem('user', JSON.stringify(userResponse.data));
+  };
+
   const logout = () => {
+    authAPI.logout().catch(() => undefined);
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
@@ -82,7 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = !!token;
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, refreshUser, setUser, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

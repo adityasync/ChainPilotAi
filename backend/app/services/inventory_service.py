@@ -1,4 +1,6 @@
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from datetime import datetime
 from ..models.product_inventory import Product, Inventory
@@ -8,15 +10,13 @@ from ..schemas.product_inventory import ProductCreate, ProductUpdate, InventoryI
 from ..core.exceptions import NotFoundError, ForbiddenError
 
 
-def _get_inventory_risk_predictions(db: Session, product_ids: list[int], company_id: int) -> dict[int, dict]:
+async def _get_inventory_risk_predictions(db: AsyncSession, product_ids: list[int], company_id: int) -> dict[int, dict]:
     """Batch-fetch latest inventory_risk prediction for a list of product IDs."""
     if not product_ids:
         return {}
 
-    from sqlalchemy import func, select
-
     subq = (
-        db.query(
+        select(
             Prediction.entity_id,
             func.max(Prediction.created_at).label("max_created"),
         )
@@ -30,15 +30,16 @@ def _get_inventory_risk_predictions(db: Session, product_ids: list[int], company
         .subquery()
     )
 
-    rows = (
-        db.query(Prediction.entity_id, Prediction.prediction_value)
+    stmt = (
+        select(Prediction.entity_id, Prediction.prediction_value)
         .join(
             subq,
             (Prediction.entity_id == subq.c.entity_id)
             & (Prediction.created_at == subq.c.max_created),
         )
-        .all()
     )
+    result = await db.execute(stmt)
+    rows = result.all()
 
     return {row.entity_id: {"risk_score": float(row.prediction_value)} for row in rows}
 
@@ -72,25 +73,32 @@ def _enrich_with_risk(item, ml_risk: dict | None = None):
     return item_dict
 
 
-def create_product(db: Session, product: ProductCreate, company_id: int):
+async def create_product(db: AsyncSession, product: ProductCreate, company_id: int):
+    """Creates a product with company association"""
     db_product = Product(**product.dict(), company_id=company_id)
     db.add(db_product)
-    db.commit()
-    db.refresh(db_product)
+    await db.commit()
+    await db.refresh(db_product)
     return db_product
 
 
-def get_products_by_company(db: Session, company_id: int, skip: int = 0, limit: int = 100):
-    return db.query(Product).filter(Product.company_id == company_id).offset(skip).limit(limit).all()
+async def get_products_by_company(db: AsyncSession, company_id: int, skip: int = 0, limit: int = 100):
+    """Retrieves products filtered by company"""
+    result = await db.execute(
+        select(Product).options(selectinload(Product.inventory_items)).filter(Product.company_id == company_id).offset(skip).limit(limit)
+    )
+    return result.scalars().all()
 
 
-def count_products_by_company(db: Session, company_id: int) -> int:
-    from sqlalchemy import func
-    return db.query(func.count(Product.id)).filter(Product.company_id == company_id).scalar() or 0
+async def count_products_by_company(db: AsyncSession, company_id: int) -> int:
+    result = await db.scalar(select(func.count(Product.id)).filter(Product.company_id == company_id))
+    return result or 0
 
 
-def get_product_by_id(db: Session, product_id: int, company_id: int):
-    product = db.query(Product).filter(Product.id == product_id).first()
+async def get_product_by_id(db: AsyncSession, product_id: int, company_id: int):
+    """Gets a specific product with company verification"""
+    result = await db.execute(select(Product).filter(Product.id == product_id))
+    product = result.scalars().first()
     if not product:
         raise NotFoundError("Product")
     if product.company_id != company_id:
@@ -98,81 +106,94 @@ def get_product_by_id(db: Session, product_id: int, company_id: int):
     return product
 
 
-def update_product(db: Session, product_id: int, product_update: ProductUpdate, company_id: int):
-    product = get_product_by_id(db, product_id, company_id)
+async def update_product(db: AsyncSession, product_id: int, product_update: ProductUpdate, company_id: int):
+    """Updates product with company verification"""
+    product = await get_product_by_id(db, product_id, company_id)
     update_data = product_update.dict(exclude_unset=True)
     for field, value in update_data.items():
         setattr(product, field, value)
-    db.commit()
-    db.refresh(product)
+    await db.commit()
+    await db.refresh(product)
     return product
 
 
-def delete_product(db: Session, product_id: int, company_id: int):
-    product = get_product_by_id(db, product_id, company_id)
-    db.delete(product)
-    db.commit()
+async def delete_product(db: AsyncSession, product_id: int, company_id: int):
+    """Deletes product with company verification"""
+    product = await get_product_by_id(db, product_id, company_id)
+    await db.delete(product)
+    await db.commit()
     return product
 
 
-def create_inventory_item(db: Session, inventory_item: InventoryItemCreate, company_id: int):
-    get_product_by_id(db, inventory_item.product_id, company_id)
+async def create_inventory_item(db: AsyncSession, inventory_item: InventoryItemCreate, company_id: int):
+    """Creates inventory item with company association"""
+    # Verify that the product belongs to the same company
+    await get_product_by_id(db, inventory_item.product_id, company_id)
+
     db_inventory_item = Inventory(**inventory_item.dict())
     db.add(db_inventory_item)
-    db.commit()
-    db.refresh(db_inventory_item)
+    await db.commit()
+    await db.refresh(db_inventory_item)
     return db_inventory_item
 
 
-def get_inventory_items_by_company(db: Session, company_id: int, skip: int = 0, limit: int = 100):
-    from ..models.product_inventory import Inventory
-    return (
-        db.query(Inventory)
+async def get_inventory_items_by_company(db: AsyncSession, company_id: int, skip: int = 0, limit: int = 100):
+    """Retrieves inventory items filtered by company"""
+    result = await db.execute(
+        select(Inventory)
         .join(Product, Inventory.product_id == Product.id)
         .filter(Product.company_id == company_id)
         .order_by(Inventory.last_updated.desc())
         .offset(skip)
         .limit(limit)
-        .all()
     )
+    return result.scalars().all()
 
 
-def count_inventory_items_by_company(db: Session, company_id: int) -> int:
-    from sqlalchemy import func
-    from ..models.product_inventory import Inventory
-    return (
-        db.query(func.count(Inventory.id))
+async def count_inventory_items_by_company(db: AsyncSession, company_id: int) -> int:
+    result = await db.scalar(
+        select(func.count(Inventory.id))
         .join(Product, Inventory.product_id == Product.id)
         .filter(Product.company_id == company_id)
-        .scalar()
-    ) or 0
+    )
+    return result or 0
 
 
-def get_inventory_item_by_id(db: Session, item_id: int, company_id: int):
-    from ..models.product_inventory import Inventory
-    inventory_item = db.query(Inventory).filter(Inventory.id == item_id).first()
+async def get_inventory_item_by_id(db: AsyncSession, item_id: int, company_id: int):
+    """Gets specific inventory item with company verification"""
+    result = await db.execute(select(Inventory).filter(Inventory.id == item_id))
+    inventory_item = result.scalars().first()
     if not inventory_item:
         raise NotFoundError("Inventory item")
-    product = db.query(Product).filter(Product.id == inventory_item.product_id).first()
+
+    # Get the associated product to verify company ownership
+    prod_result = await db.execute(select(Product).filter(Product.id == inventory_item.product_id))
+    product = prod_result.scalars().first()
     if not product or product.company_id != company_id:
         raise ForbiddenError("Inventory item does not belong to your company")
+
     return inventory_item
 
 
-def update_inventory_item(db: Session, item_id: int, inventory_update: InventoryItemUpdate, company_id: int):
-    inventory_item = get_inventory_item_by_id(db, item_id, company_id)
+async def update_inventory_item(db: AsyncSession, item_id: int, inventory_update: InventoryItemUpdate, company_id: int):
+    """Updates inventory item with company verification"""
+    inventory_item = await get_inventory_item_by_id(db, item_id, company_id)
+
+    # If product_id is being updated, verify it belongs to the same company
     if inventory_update.product_id is not None:
-        get_product_by_id(db, inventory_update.product_id, company_id)
+        await get_product_by_id(db, inventory_update.product_id, company_id)
+
     update_data = inventory_update.dict(exclude_unset=True)
     for field, value in update_data.items():
         setattr(inventory_item, field, value)
-    db.commit()
-    db.refresh(inventory_item)
+    await db.commit()
+    await db.refresh(inventory_item)
     return inventory_item
 
 
-def delete_inventory_item(db: Session, item_id: int, company_id: int):
-    inventory_item = get_inventory_item_by_id(db, item_id, company_id)
-    db.delete(inventory_item)
-    db.commit()
+async def delete_inventory_item(db: AsyncSession, item_id: int, company_id: int):
+    """Deletes inventory item with company verification"""
+    inventory_item = await get_inventory_item_by_id(db, item_id, company_id)
+    await db.delete(inventory_item)
+    await db.commit()
     return inventory_item

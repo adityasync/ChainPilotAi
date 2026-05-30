@@ -1,15 +1,18 @@
+import logging
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import RedirectResponse
 from .database import engine, Base
-from .core.config import BACKEND_CORS_ORIGINS
+from .core.config import BACKEND_CORS_ORIGINS, ML_ARTIFACTS_PATH
 from .core.exceptions import AppError
 from . import models
 
-# Create database tables as a dev fallback.
-# Production schema management uses Alembic migrations (backend/alembic/).
-Base.metadata.create_all(bind=engine)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Supply Chain Management API",
@@ -65,9 +68,49 @@ app.add_middleware(
 )
 
 
+# --- CI-01: HTTP → HTTPS redirect when behind a reverse proxy ---
+class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
+    """Redirect HTTP to HTTPS when X-Forwarded-Proto indicates HTTP."""
+    async def dispatch(self, request: Request, call_next):
+        if request.headers.get("x-forwarded-proto") == "http":
+            url = request.url.replace(scheme="https")
+            return RedirectResponse(url=str(url), status_code=301)
+        return await call_next(request)
+
+
+if os.getenv("FORCE_HTTPS", "false").lower() in ("true", "1", "yes"):
+    app.add_middleware(HTTPSRedirectMiddleware)
+
+
 @app.get("/")
-def read_root():
+async def read_root():
     return {"message": "Welcome to the Supply Chain Management API"}
+
+
+# Create database tables as a dev fallback (async).
+@app.on_event("startup")
+async def startup_event():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    # CON-07: Validate ML artifacts path
+    if not os.path.isdir(ML_ARTIFACTS_PATH):
+        logger.warning(
+            "CON-07: ML_ARTIFACTS_PATH '%s' does not exist. "
+            "ML predictions will return 503 until models are trained. "
+            "Set ML_ARTIFACTS_PATH in your .env or run the training pipeline.",
+            ML_ARTIFACTS_PATH,
+        )
+    else:
+        pkl_files = [f for f in os.listdir(ML_ARTIFACTS_PATH) if f.endswith(".pkl")]
+        if not pkl_files:
+            logger.warning(
+                "CON-07: ML_ARTIFACTS_PATH '%s' exists but contains no .pkl model files. "
+                "ML predictions will return 503 until models are trained.",
+                ML_ARTIFACTS_PATH,
+            )
+        else:
+            logger.info("CON-07: ML artifacts found at '%s': %s", ML_ARTIFACTS_PATH, pkl_files)
 
 
 # Include API routes

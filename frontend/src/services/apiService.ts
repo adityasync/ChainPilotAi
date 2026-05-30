@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 // Create an Axios instance with default config
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // 10 seconds timeout
+  timeout: 30000, // 30 seconds timeout
 });
 
 // Request interceptor to add auth token to all requests
@@ -29,10 +29,14 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token might be expired, redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Token might be expired
+      const currentPath = window.location.pathname;
+      // Only clear and redirect if NOT already on auth pages
+      if (currentPath !== '/login' && currentPath !== '/register') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -145,6 +149,9 @@ export const orderAPI = {
 
   deleteOrder: (id: number) =>
     apiClient.delete(`/orders/${id}`),
+
+  bulkCreateOrders: (orders: any[]) =>
+    apiClient.post('/orders/bulk', orders),
 };
 
 // ML endpoints
@@ -193,11 +200,14 @@ export const demandAPI = {
       params: { period, forecast_date: forecastDate },
     }),
 
+  getPortfolioSummary: (period: 'week' | 'month' | 'quarter') =>
+    apiClient.get('/demand/portfolio/summary', { params: { period } }),
+
   getForecastAccuracy: (productId: number) =>
     apiClient.get(`/demand/${productId}/accuracy`),
 
-  getPortfolioSummary: (period: 'week' | 'month' | 'quarter' = 'month') =>
-    apiClient.get('/demand/portfolio/summary', { params: { period } }),
+  getDemandInsights: (productId: number) =>
+    apiClient.get(`/demand/${productId}/insights`),
 };
 
 export const dashboardAPI = {
@@ -212,6 +222,7 @@ export const dataAPI = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 300000, // 5 minutes for large file uploads
     }),
 };
 

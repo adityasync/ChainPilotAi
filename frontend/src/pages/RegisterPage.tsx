@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const RegisterPage = () => {
@@ -10,6 +10,7 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,11 +35,12 @@ const RegisterPage = () => {
     setIsLoading(true);
 
     try {
-      const success = await register(email, password, companyName);
-      if (success) {
-        navigate('/dashboard');
+      const result = await register(email, password, companyName);
+      if (result.ok) {
+        const from = (location.state as any)?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
       } else {
-        setError('Could not create account. Please try again.');
+        setError(result.error);
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');
@@ -49,28 +51,30 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fbfbfd] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-[#fbfbfd] dark:bg-[#0a0a0a] flex flex-col items-center justify-center px-6">
       {/* Content */}
       <div className="w-full max-w-md animate-fade-in-up">
         {/* Logo */}
         <div className="flex justify-center mb-12">
-          <div className="w-12 h-12 rounded-2xl bg-black flex items-center justify-center">
-            <span className="text-white font-bold text-xl">S</span>
-          </div>
+          <img
+            src="/logo.png"
+            alt="ChainPilot logo"
+            className="w-12 h-12 rounded-2xl object-cover"
+          />
         </div>
 
         {/* Headline */}
-        <h1 className="text-5xl font-semibold text-center text-[#1d1d1f] tracking-tight mb-2">
+        <h1 className="text-5xl font-semibold text-center text-[#1d1d1f] dark:text-white tracking-tight mb-2">
           Create account.
         </h1>
-        <p className="text-center text-[#86868b] text-lg mb-10">
-          Start managing your supply chain
+        <p className="text-center text-[#86868b] dark:text-[#98989d] text-lg mb-10">
+          Start managing your supply chain with ChainPilot
         </p>
 
         {/* Error message */}
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100">
-            <p className="text-sm text-red-600 text-center">{error}</p>
+          <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800">
+            <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>
           </div>
         )}
 
@@ -86,8 +90,8 @@ const RegisterPage = () => {
               onChange={(e) => setCompanyName(e.target.value)}
               className="
                 w-full px-5 py-4 text-lg
-                bg-white border border-gray-200 rounded-xl
-                text-[#1d1d1f] placeholder-[#aeaeb2]
+                bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-[#38383a] rounded-xl
+                text-[#1d1d1f] dark:text-white placeholder-[#aeaeb2]
                 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/10
                 transition-all duration-200
               "
@@ -106,8 +110,8 @@ const RegisterPage = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="
                 w-full px-5 py-4 text-lg
-                bg-white border border-gray-200 rounded-xl
-                text-[#1d1d1f] placeholder-[#aeaeb2]
+                bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-[#38383a] rounded-xl
+                text-[#1d1d1f] dark:text-white placeholder-[#aeaeb2]
                 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/10
                 transition-all duration-200
               "
@@ -126,8 +130,8 @@ const RegisterPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="
                 w-full px-5 py-4 text-lg
-                bg-white border border-gray-200 rounded-xl
-                text-[#1d1d1f] placeholder-[#aeaeb2]
+                bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-[#38383a] rounded-xl
+                text-[#1d1d1f] dark:text-white placeholder-[#aeaeb2]
                 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/10
                 transition-all duration-200
               "
@@ -146,8 +150,8 @@ const RegisterPage = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="
                 w-full px-5 py-4 text-lg
-                bg-white border border-gray-200 rounded-xl
-                text-[#1d1d1f] placeholder-[#aeaeb2]
+                bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-[#38383a] rounded-xl
+                text-[#1d1d1f] dark:text-white placeholder-[#aeaeb2]
                 focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/10
                 transition-all duration-200
               "
@@ -160,8 +164,8 @@ const RegisterPage = () => {
             disabled={isLoading}
             className="
               w-full py-4 text-lg font-medium
-              bg-[#1d1d1f] text-white rounded-full
-              hover:bg-black
+              bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] rounded-full
+              hover:bg-black dark:hover:bg-gray-200
               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900
               transition-all duration-200
               disabled:opacity-50 disabled:cursor-not-allowed
@@ -179,11 +183,11 @@ const RegisterPage = () => {
         </form>
 
         {/* Footer */}
-        <p className="mt-10 text-center text-[#86868b]">
+        <p className="mt-10 text-center text-[#86868b] dark:text-[#98989d]">
           Already have an account?{' '}
           <Link
             to="/login"
-            className="text-[#0071e3] hover:underline font-medium"
+            className="text-[#0071e3] dark:text-blue-400 hover:underline font-medium"
           >
             Sign in
           </Link>
@@ -191,8 +195,8 @@ const RegisterPage = () => {
       </div>
 
       {/* Copyright */}
-      <p className="absolute bottom-8 text-sm text-[#86868b]">
-        © 2024 Supply. All rights reserved.
+      <p className="absolute bottom-8 text-sm text-[#86868b] dark:text-[#98989d]">
+        © 2024 ChainPilot. All rights reserved.
       </p>
     </div>
   );

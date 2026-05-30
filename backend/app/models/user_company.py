@@ -11,7 +11,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationship
@@ -27,8 +27,8 @@ class Company(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationship
-    users = relationship("User", back_populates="company")
-    products = relationship("Product", back_populates="company")
-    suppliers = relationship("Supplier", back_populates="company")
-    predictions = relationship("Prediction", back_populates="company")
-    insights = relationship("Insight", back_populates="company")
+    users = relationship("User", back_populates="company", cascade="all, delete-orphan", passive_deletes=True)
+    products = relationship("Product", back_populates="company", cascade="all, delete-orphan", passive_deletes=True)
+    suppliers = relationship("Supplier", back_populates="company", cascade="all, delete-orphan", passive_deletes=True)
+    predictions = relationship("Prediction", back_populates="company", cascade="all, delete-orphan", passive_deletes=True)
+    insights = relationship("Insight", back_populates="company", cascade="all, delete-orphan", passive_deletes=True)

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from typing import List
 import logging
 import traceback
@@ -8,7 +10,7 @@ from datetime import datetime
 from ..database import get_db
 from ..api.auth import get_current_user
 from ..core.company_isolation import get_current_user_company_id
-from ..core.exceptions import NotFoundError, ValidationError, AppError
+from ..core.exceptions import NotFoundError, ValidationError, AppError, ServiceUnavailableError
 from ..services.inventory_service import get_products_by_company
 from ..services.supplier_service import get_suppliers_by_company
 from ..ml.inference.predictor import MLPredictor
@@ -25,20 +27,21 @@ insight_engine = EnhancedInsightEngine(predictor)
 
 
 @router.get("/demand-forecast/{product_id}")
-def get_demand_forecast(
+async def get_demand_forecast(
     product_id: int,
     date: str,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    company_id = get_current_user_company_id(db, current_user)
+    company_id = await get_current_user_company_id(db, current_user)
 
     try:
         forecast_date = datetime.strptime(date, "%Y-%m-%d")
     except ValueError:
         raise ValidationError("Invalid date format. Use YYYY-MM-DD", field="date")
 
-    product = db.query(Product).filter(Product.id == product_id, Product.company_id == company_id).first()
+    result = await db.execute(select(Product).filter(Product.id == product_id, Product.company_id == company_id))
+    product = result.scalars().first()
     if not product:
         raise NotFoundError("Product", product_id)
 
@@ -54,23 +57,26 @@ def get_demand_forecast(
             prediction_value=forecast_val,
         )
         db.add(prediction)
-        db.commit()
+        await db.commit()
 
         return {"product_id": product_id, "forecast_date": date, "predicted_demand": forecast_val}
+    except ValueError as e:
+        raise ServiceUnavailableError(f"ML model not loaded: {str(e)}")
     except Exception as e:
         logger.error(f"Error getting demand forecast: {e}")
         raise AppError(code="ML_ERROR", message="Error generating demand forecast", status_code=500)
 
 
 @router.get("/inventory-risk/{product_id}")
-def get_inventory_risk(
+async def get_inventory_risk(
     product_id: int,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    company_id = get_current_user_company_id(db, current_user)
+    company_id = await get_current_user_company_id(db, current_user)
 
-    product = db.query(Product).filter(Product.id == product_id, Product.company_id == company_id).first()
+    result = await db.execute(select(Product).options(selectinload(Product.inventory_items)).filter(Product.id == product_id, Product.company_id == company_id))
+    product = result.scalars().first()
     if not product:
         raise NotFoundError("Product", product_id)
 
@@ -99,23 +105,26 @@ def get_inventory_risk(
             prediction_value=risk_score,
         )
         db.add(prediction)
-        db.commit()
+        await db.commit()
 
         return {"product_id": product_id, "risk_label": risk_label, "probabilities": [float(p) for p in probas]}
+    except ValueError as e:
+        raise ServiceUnavailableError(f"ML model not loaded: {str(e)}")
     except Exception as e:
         logger.error(f"Error getting inventory risk: {e}")
         raise AppError(code="ML_ERROR", message="Error generating inventory risk assessment", status_code=500)
 
 
 @router.get("/supplier-delay-risk/{supplier_id}")
-def get_supplier_delay_risk(
+async def get_supplier_delay_risk(
     supplier_id: int,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    company_id = get_current_user_company_id(db, current_user)
+    company_id = await get_current_user_company_id(db, current_user)
 
-    supplier = db.query(Supplier).filter(Supplier.id == supplier_id, Supplier.company_id == company_id).first()
+    result = await db.execute(select(Supplier).filter(Supplier.id == supplier_id, Supplier.company_id == company_id))
+    supplier = result.scalars().first()
     if not supplier:
         raise NotFoundError("Supplier", supplier_id)
 
@@ -141,21 +150,23 @@ def get_supplier_delay_risk(
             prediction_value=delay_prob,
         )
         db.add(prediction)
-        db.commit()
+        await db.commit()
 
         return {"supplier_id": supplier_id, "delay_risk": bool(delay_prediction), "delay_probability": delay_prob}
+    except ValueError as e:
+        raise ServiceUnavailableError(f"ML model not loaded: {str(e)}")
     except Exception as e:
         logger.error(f"Error getting supplier delay risk: {e}")
         raise AppError(code="ML_ERROR", message="Error generating supplier delay risk assessment", status_code=500)
 
 
 @router.post("/cost-anomaly")
-def detect_cost_anomaly(
+async def detect_cost_anomaly(
     cost_data: dict,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    company_id = get_current_user_company_id(db, current_user)
+    company_id = await get_current_user_company_id(db, current_user)
 
     try:
         anomaly_pred, anomaly_score = predictor.detect_cost_anomaly(cost_data)
@@ -168,7 +179,7 @@ def detect_cost_anomaly(
             prediction_value=float(anomaly_score),
         )
         db.add(prediction)
-        db.commit()
+        await db.commit()
 
         return {
             "is_anomaly": anomaly_pred == -1,
@@ -183,14 +194,14 @@ def detect_cost_anomaly(
 
 
 @router.post("/run-analysis")
-def run_ml_analysis(
+async def run_ml_analysis(
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    company_id = get_current_user_company_id(db, current_user)
+    company_id = await get_current_user_company_id(db, current_user)
 
     try:
-        products = db.query(Product).filter(Product.company_id == company_id).all()
+        products = await get_products_by_company(db, company_id)
         product_data = []
         for prod in products:
             total_stock = sum(item.current_stock for item in prod.inventory_items) if prod.inventory_items else 0
@@ -206,7 +217,7 @@ def run_ml_analysis(
                 "Price": prod.unit_cost,
             })
 
-        suppliers = db.query(Supplier).filter(Supplier.company_id == company_id).all()
+        suppliers = await get_suppliers_by_company(db, company_id)
         supplier_data = []
         for sup in suppliers:
             supplier_data.append({
@@ -219,7 +230,7 @@ def run_ml_analysis(
                 "Number of products sold": 0,
             })
 
-        results = insight_engine.run_enhanced_analysis(
+        results = await insight_engine.run_enhanced_analysis(
             db=db,
             company_id=company_id,
             product_data=product_data,
@@ -238,18 +249,18 @@ def run_ml_analysis(
 
 
 @router.get("/insights")
-def get_prioritized_insights(
+async def get_prioritized_insights(
     severity: str = None,
     category: str = None,
     status: str = None,
     page: int = 1,
     page_size: int = 20,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    company_id = get_current_user_company_id(db, current_user)
+    company_id = await get_current_user_company_id(db, current_user)
     limit = page * page_size
-    all_insights = insight_engine.get_prioritized_insights(
+    all_insights = await insight_engine.get_prioritized_insights(
         db=db, company_id=company_id, severity=severity, category=category, status=status, limit=limit,
     )
     total = len(all_insights)
@@ -259,27 +270,27 @@ def get_prioritized_insights(
 
 
 @router.get("/insights/action-required")
-def get_action_required_insights(
+async def get_action_required_insights(
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    company_id = get_current_user_company_id(db, current_user)
-    insights = insight_engine.get_prioritized_insights(db=db, company_id=company_id, severity="high", limit=20)
-    critical_insights = insight_engine.get_prioritized_insights(db=db, company_id=company_id, severity="critical", limit=20)
+    company_id = await get_current_user_company_id(db, current_user)
+    insights = await insight_engine.get_prioritized_insights(db=db, company_id=company_id, severity="high", limit=20)
+    critical_insights = await insight_engine.get_prioritized_insights(db=db, company_id=company_id, severity="critical", limit=20)
     all_action_insights = insights + critical_insights
     all_action_insights.sort(key=lambda x: x["priority_score"], reverse=True)
     return all_action_insights[:20]
 
 
 @router.post("/insights/{insight_id}/acknowledge")
-def acknowledge_insight(
+async def acknowledge_insight(
     insight_id: int,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    company_id = get_current_user_company_id(db, current_user)
+    company_id = await get_current_user_company_id(db, current_user)
     try:
-        insight_engine.acknowledge_insight(db, insight_id, company_id)
+        await insight_engine.acknowledge_insight(db, insight_id, company_id)
         return {"message": f"Insight {insight_id} acknowledged successfully"}
     except ValueError as e:
         raise NotFoundError("Insight", insight_id)
@@ -289,14 +300,14 @@ def acknowledge_insight(
 
 
 @router.post("/insights/{insight_id}/resolve")
-def resolve_insight(
+async def resolve_insight(
     insight_id: int,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    company_id = get_current_user_company_id(db, current_user)
+    company_id = await get_current_user_company_id(db, current_user)
     try:
-        insight_engine.resolve_insight(db, insight_id, company_id)
+        await insight_engine.resolve_insight(db, insight_id, company_id)
         return {"message": f"Insight {insight_id} resolved successfully"}
     except ValueError as e:
         raise NotFoundError("Insight", insight_id)
@@ -306,23 +317,29 @@ def resolve_insight(
 
 
 @router.get("/predictions")
-def get_predictions(
+async def get_predictions(
     entity_type: str = None,
     prediction_type: str = None,
     page: int = 1,
     page_size: int = 20,
     current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    company_id = get_current_user_company_id(db, current_user)
-    query = db.query(Prediction).filter(Prediction.company_id == company_id)
+    company_id = await get_current_user_company_id(db, current_user)
+    query = select(Prediction).filter(Prediction.company_id == company_id)
     if entity_type:
         query = query.filter(Prediction.entity_type == entity_type)
     if prediction_type:
         query = query.filter(Prediction.prediction_type == prediction_type)
-    total = query.count()
+
+    from sqlalchemy import func
+    count_result = await db.scalar(select(func.count()).select_from(query.subquery()))
+    total = count_result or 0
+
     skip = (page - 1) * page_size
-    predictions = query.order_by(Prediction.created_at.desc()).offset(skip).limit(page_size).all()
+    result = await db.execute(query.order_by(Prediction.created_at.desc()).offset(skip).limit(page_size))
+    predictions = result.scalars().all()
+
     return {
         "data": [
             {

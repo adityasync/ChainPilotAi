@@ -9,7 +9,7 @@ class Prediction(Base):
     __tablename__ = "predictions"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
     entity_type = Column(String, nullable=False)  # 'product' or 'supplier'
     entity_id = Column(Integer, nullable=False)  # ID of the referenced entity
     prediction_type = Column(String, nullable=False)  # type of prediction
@@ -25,7 +25,7 @@ class Insight(Base):
     __tablename__ = "insights"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
     title = Column(String, nullable=False)
     message = Column(String, nullable=False)
     severity = Column(String, nullable=False)  # 'low', 'medium', or 'high'

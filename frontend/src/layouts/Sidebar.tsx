@@ -7,12 +7,14 @@ import {
   Lightbulb,
   Settings,
   Upload,
+  ShoppingCart,
 } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/inventory', icon: Package, label: 'Inventory' },
-  { to: '/demand-planning', icon: TrendingUp, label: 'Demand' },
+  { to: '/orders', icon: ShoppingCart, label: 'Orders' },
+  { to: '/demand', icon: TrendingUp, label: 'Demand' },
   { to: '/suppliers', icon: Truck, label: 'Suppliers' },
   { to: '/insights', icon: Lightbulb, label: 'Insights' },
   { to: '/upload-data', icon: Upload, label: 'Upload Data' },
@@ -25,7 +27,7 @@ const Sidebar = () => {
       sidebar-nav fixed left-0 top-0 h-screen
       bg-white dark:bg-[#1c1c1e]
       border-r border-gray-100 dark:border-[#38383a]
-      flex flex-col py-6 z-50
+      hidden lg:flex flex-col py-6 z-50
       overflow-hidden
     ">
       {/* Logo */}

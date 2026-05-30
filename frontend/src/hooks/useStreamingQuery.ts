@@ -6,12 +6,11 @@ export function useStreamingQuery() {
   const [answer, setAnswer] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const ask = useCallback((question: string) => {
-    // Clean up any existing connection
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
 
     setAnswer('');
@@ -25,36 +24,72 @@ export function useStreamingQuery() {
       return;
     }
 
-    const params = new URLSearchParams({
-      question,
-      token,
-    });
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-    const es = new EventSource(`${API_BASE_URL}/ai/query/stream?${params}`);
-    eventSourceRef.current = es;
+    const params = new URLSearchParams({ question });
 
-    es.onmessage = (event) => {
-      setAnswer((prev) => prev + event.data);
-    };
+    fetch(`${API_BASE_URL}/ai/query/stream?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
 
-    es.addEventListener('done', () => {
-      es.close();
-      eventSourceRef.current = null;
-      setIsStreaming(false);
-    });
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('No response body');
 
-    es.onerror = () => {
-      es.close();
-      eventSourceRef.current = null;
-      setIsStreaming(false);
-      setError('Connection to AI service failed. Please try again.');
-    };
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+
+            if (trimmed.startsWith('event: done')) {
+              setIsStreaming(false);
+              abortControllerRef.current = null;
+              return;
+            }
+
+            if (trimmed.startsWith('data: ')) {
+              const data = trimmed.slice(6);
+              if (data.startsWith('Error:')) {
+                setError(data);
+                setIsStreaming(false);
+                abortControllerRef.current = null;
+                return;
+              }
+              setAnswer((prev) => prev + data);
+            }
+          }
+        }
+
+        setIsStreaming(false);
+        abortControllerRef.current = null;
+      })
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        setIsStreaming(false);
+        abortControllerRef.current = null;
+        setError('Connection to AI service failed. Please try again.');
+      });
   }, []);
 
   const cancel = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
     setIsStreaming(false);
   }, []);

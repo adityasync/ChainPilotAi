@@ -1,5 +1,5 @@
 """
-Versioned system prompt loader.
+NFR-MAINT-02: Versioned system prompt loader.
 
 Loads prompts from docs/prompts/*.md files. Each file has YAML frontmatter
 with version, id, and last_updated fields, followed by the prompt body.
@@ -12,6 +12,7 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
+# Resolve docs/prompts relative to the project root
 _BACKEND_DIR = Path(__file__).resolve().parent.parent.parent.parent  # backend/
 _PROJECT_ROOT = _BACKEND_DIR.parent
 _PROMPTS_DIR = _PROJECT_ROOT / "docs" / "prompts"
@@ -48,11 +49,12 @@ def load_prompt(name: str) -> str:
         return body.strip()
 
     raise FileNotFoundError(
-        f"Prompt file not found: {filepath}. "
+        f"NFR-MAINT-02: Prompt file not found: {filepath}. "
         f"Ensure docs/prompts/{name}_system.md exists."
     )
 
 
+# Convenience functions for each prompt
 def insight_generation_prompt() -> str:
     return load_prompt("insight_generation")
 

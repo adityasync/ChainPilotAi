@@ -9,7 +9,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
     order_date = Column(Date, nullable=False, default=date.today)
     quantity = Column(Integer, nullable=False)
     region = Column(String, nullable=True)

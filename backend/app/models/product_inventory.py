@@ -8,7 +8,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
     product_name = Column(String, nullable=False)
     category = Column(String, nullable=True)
     unit_cost = Column(Float, nullable=False)
@@ -17,15 +17,15 @@ class Product(Base):
 
     # Relationships
     company = relationship("Company", back_populates="products")
-    inventory_items = relationship("Inventory", back_populates="product")
-    orders = relationship("Order", back_populates="product")
+    inventory_items = relationship("Inventory", back_populates="product", cascade="all, delete-orphan", passive_deletes=True)
+    orders = relationship("Order", back_populates="product", cascade="all, delete-orphan", passive_deletes=True)
 
 
 class Inventory(Base):
     __tablename__ = "inventory"
 
     id = Column(Integer, primary_key=True, index=True)
-    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
     warehouse = Column(String, nullable=False)
     current_stock = Column(Integer, nullable=False)
     reorder_point = Column(Integer, nullable=False)
