@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { authAPI } from '../services/apiService';
 
@@ -32,7 +32,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return localStorage.getItem('token');
   });
 
+  // Guard against validateToken overwriting state while login() is in flight
+  const isLoggingInRef = useRef(false);
+
   const login = async (email: string, password: string): Promise<boolean> => {
+    isLoggingInRef.current = true;
     try {
       // Clear any stale data from a previous session FIRST
       localStorage.removeItem('token');
@@ -63,6 +67,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(null);
       console.error('Login error:', error);
       return false;
+    } finally {
+      isLoggingInRef.current = false;
     }
   };
 
@@ -102,18 +108,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAuthenticated = !!token;
 
-  // Validate stored token on app init — catches stale/invalid tokens early
+  // Validate stored token on app init — catches stale/invalid tokens early.
+  // Guarded by isLoggingInRef so it never overwrites a fresh login() in progress.
   useEffect(() => {
-    const validateToken = async () => {
-      const storedToken = localStorage.getItem('token');
-      if (!storedToken) return;
+    const storedToken = localStorage.getItem('token');
+    if (!storedToken) return;
 
+    let cancelled = false;
+
+    const validateToken = async () => {
       try {
         const userResponse = await authAPI.getCurrentUser();
+        // Bail if login() started while we were waiting
+        if (cancelled || isLoggingInRef.current) return;
         // Token is valid — sync user state in case it was stale
         setUser(userResponse.data);
         localStorage.setItem('user', JSON.stringify(userResponse.data));
       } catch {
+        // Bail if login() started while we were waiting — don't clear its fresh state
+        if (cancelled || isLoggingInRef.current) return;
         // Token is invalid/expired — clear everything
         setToken(null);
         setUser(null);
@@ -123,33 +136,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     validateToken();
+
+    return () => {
+      cancelled = true;
+    };
   }, []); // Only on mount
 
-  // Listen for token changes from other tabs (cross-tab collision detection)
+  // Listen for logout from other tabs (only react to token REMOVAL, not changes)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'token') {
-        // Token was changed or removed by another tab
-        const newToken = e.newValue;
-        if (!newToken) {
-          // Another tab logged out — sync this tab
-          setToken(null);
-          setUser(null);
-          window.location.href = '/login';
-        } else if (newToken !== token) {
-          // Another tab logged in with a different user — force logout to avoid confusion
-          setToken(null);
-          setUser(null);
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
-        }
+      if (e.key === 'token' && !e.newValue) {
+        // Another tab logged out — sync this tab
+        setToken(null);
+        setUser(null);
+        window.location.href = '/login';
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [token]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, token, login, register, logout, refreshUser, setUser, isAuthenticated }}>
