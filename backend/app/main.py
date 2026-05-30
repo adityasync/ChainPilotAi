@@ -90,23 +90,26 @@ async def read_root():
 # Create database tables as a dev fallback (async).
 @app.on_event("startup")
 async def startup_event():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables ensured.")
+    except Exception as e:
+        logger.error("Database connection failed: %s", e)
+        logger.error("Check DATABASE_URL in your environment variables.")
 
     # CON-07: Validate ML artifacts path
     if not os.path.isdir(ML_ARTIFACTS_PATH):
         logger.warning(
             "CON-07: ML_ARTIFACTS_PATH '%s' does not exist. "
-            "ML predictions will return 503 until models are trained. "
-            "Set ML_ARTIFACTS_PATH in your .env or run the training pipeline.",
+            "ML predictions will return 503 until models are trained.",
             ML_ARTIFACTS_PATH,
         )
     else:
         pkl_files = [f for f in os.listdir(ML_ARTIFACTS_PATH) if f.endswith(".pkl")]
         if not pkl_files:
             logger.warning(
-                "CON-07: ML_ARTIFACTS_PATH '%s' exists but contains no .pkl model files. "
-                "ML predictions will return 503 until models are trained.",
+                "CON-07: ML_ARTIFACTS_PATH '%s' exists but contains no .pkl model files.",
                 ML_ARTIFACTS_PATH,
             )
         else:

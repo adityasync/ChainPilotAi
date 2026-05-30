@@ -1,14 +1,27 @@
 import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY environment variable is required")
+    raise RuntimeError(
+        "SECRET_KEY environment variable is required. "
+        "Set it in your Render dashboard under Environment Variables."
+    )
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://aditya@localhost/supply_chain_db")
+
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is required. "
+        "Set it in your Render dashboard (use your Neon connection string)."
+    )
+
 BACKEND_CORS_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
@@ -24,3 +37,5 @@ AI_FALLBACK_MODEL = os.getenv("AI_FALLBACK_MODEL", "glm-4.7")
 AI_BASE_URL = os.getenv("AI_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
 AI_API_KEY = os.getenv("AI_API_KEY", "")
 AI_REQUEST_TIMEOUT_SECONDS = int(os.getenv("AI_REQUEST_TIMEOUT_SECONDS", "10"))
+
+logger.info("Config loaded: DB=%s..., CORS=%s", DATABASE_URL[:30], BACKEND_CORS_ORIGINS)
