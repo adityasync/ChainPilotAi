@@ -145,7 +145,7 @@ const SupplierPage = () => {
       // Compute total active count: if we have all suppliers on this page, count directly;
       // otherwise use a heuristic based on the ratio on the current page
       if (allSuppliers.length >= totalCount) {
-        setTotalActive(data.filter((s) => s.status === 'active').length);
+        setTotalActive(data.filter((s: SupplierCardData) => s.status === 'active').length);
       } else {
         // Fetch all suppliers to get accurate active count
         try {
@@ -158,7 +158,7 @@ const SupplierPage = () => {
           setTotalActive(activeCount);
         } catch {
           // Fallback: estimate from current page
-          setTotalActive(data.filter((s) => s.status === 'active').length);
+          setTotalActive(data.filter((s: SupplierCardData) => s.status === 'active').length);
         }
       }
     } catch (fetchError) {

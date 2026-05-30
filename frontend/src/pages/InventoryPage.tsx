@@ -87,15 +87,6 @@ const formatCurrency = (value: number): string => {
   return `$${value.toFixed(2)}`;
 };
 
-const statusBadgeClass = (status: StatusLabel): string => {
-  switch (status) {
-    case 'Critical': return 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400';
-    case 'Low': return 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400';
-    case 'Overstock': return 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400';
-    default: return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400';
-  }
-};
-
 const stockBarColor = (status: StatusLabel): string => {
   switch (status) {
     case 'Critical': return 'bg-red-500';
@@ -248,7 +239,6 @@ const InventoryPage = () => {
     setSelectedIds(new Set());
   }, [filteredAndSorted.length, setTotalItems, goToPage]);
 
-  const healthyCount = useMemo(() => products.filter((p) => getStatus(p).text === 'Healthy').length, [products]);
   const lowCount = useMemo(() => products.filter((p) => getStatus(p).text === 'Low').length, [products]);
   const criticalCount = useMemo(() => products.filter((p) => getStatus(p).text === 'Critical').length, [products]);
   const overstockCount = useMemo(() => products.filter((p) => getStatus(p).text === 'Overstock').length, [products]);
