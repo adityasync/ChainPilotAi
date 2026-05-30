@@ -90,7 +90,7 @@ const Hero = () => {
               </div>
               <div className="flex-1 flex justify-center">
                 <div className="bg-[#2c2c2e] rounded-md px-4 py-1 text-[11px] text-[#6e6e73] font-medium">
-                  dashboard.flowchain.app
+                  dashboard.chainpilot.app
                 </div>
               </div>
               <div className="w-12" />

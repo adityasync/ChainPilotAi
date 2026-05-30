@@ -29,14 +29,14 @@ const DashboardMockup = () => {
       {/* URL bar */}
       <rect x="200" y="12" width="400" height="20" rx="10" fill={card} />
       <text x="370" y="26" textAnchor="middle" fontSize="10" fill={textSecondary}>
-        dashboard.flowchain.app
+        dashboard.chainpilot.app
       </text>
 
       {/* Sidebar */}
       <rect x="0" y="40" width="180" height="480" fill="#111111" />
       <rect x="16" y="56" width="32" height="32" rx="8" fill={accent} opacity="0.15" />
       <text x="56" y="76" fontSize="11" fontWeight="600" fill={text}>
-        FlowChain
+        ChainPilot
       </text>
 
       {/* Nav items */}

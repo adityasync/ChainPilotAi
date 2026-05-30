@@ -27,7 +27,7 @@ const Navbar = () => {
         <Link to="/" className="flex items-center group">
           <img
             src="/favicon.png"
-            alt="FlowChain"
+            alt="ChainPilot"
             className="w-7 h-7 rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
           />
         </Link>

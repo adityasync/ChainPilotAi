@@ -11,10 +11,10 @@ const Footer = () => {
             <div className="flex items-center gap-2.5 mb-4">
               <img
                 src="/favicon.png"
-                alt="FlowChain"
+                alt="ChainPilot"
                 className="w-7 h-7 rounded-lg object-cover"
               />
-              <span className="text-[14px] font-semibold text-white">FlowChain</span>
+              <span className="text-[14px] font-semibold text-white">ChainPilot</span>
             </div>
             <p className="text-[13px] text-white/30 leading-relaxed max-w-[240px] font-light">
               ML-powered supply chain intelligence. Predict, classify, detect — before
@@ -102,7 +102,7 @@ const Footer = () => {
         {/* Bottom bar */}
         <div className="pt-8 border-t border-white/[0.04] flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="text-[12px] text-white/20 font-light">
-            &copy; {new Date().getFullYear()} FlowChain. All rights reserved.
+            &copy; {new Date().getFullYear()} ChainPilot. All rights reserved.
           </span>
           <div className="flex items-center gap-6">
             <Link
