@@ -1,13 +1,10 @@
 services:
   - type: web
     name: flowchainai-backend
-    runtime: python
-    pythonVersion: "3.12.3"
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
     region: singapore  # closest to Neon DB region (ap-southeast-1)
     plan: free
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         sync: false  # set manually in Render dashboard
