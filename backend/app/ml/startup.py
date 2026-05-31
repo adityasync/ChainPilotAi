@@ -179,7 +179,7 @@ def ensure_ml_ready() -> None:
     model_dir = os.path.join("app", "ml", "models")
     versions_file = os.path.join(model_dir, ".ml_versions.json")
 
-    print("═══ ML Startup Check ═══", flush=True)
+    print("=== ML Startup Check ===", flush=True)
 
     # 1. Resolve training data location
     data_dir = _resolve_data_dir()
@@ -193,7 +193,7 @@ def ensure_ml_ready() -> None:
         for p in ["../data/processed", "data/processed", "backend/data/processed"]:
             ap = os.path.abspath(p)
             print(f"  {p} -> {ap} exists={os.path.exists(ap)}", flush=True)
-        print("═══ ML Startup Check Done (no data) ═══", flush=True)
+        print("=== ML Startup Check Done (no data) ===", flush=True)
         return
 
     # 2. Read stored versions
@@ -216,7 +216,7 @@ def ensure_ml_ready() -> None:
         print("Model files missing — training required.", flush=True)
         needs_training = True
     elif _versions_changed(stored_versions, current_versions):
-        print(f"ML library versions changed ({stored_versions} → {current_versions}) — retraining.", flush=True)
+        print(f"ML library versions changed ({stored_versions} -> {current_versions}) -- retraining.", flush=True)
         needs_training = True
     else:
         print("All models present and versions unchanged — skipping training.", flush=True)
@@ -243,4 +243,4 @@ def ensure_ml_ready() -> None:
             traceback.print_exc()
             # Don't store versions — will retry next restart
 
-    print("═══ ML Startup Check Done ═══", flush=True)
+    print("=== ML Startup Check Done ===", flush=True)
