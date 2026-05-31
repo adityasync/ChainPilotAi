@@ -31,6 +31,9 @@ htmlcov/
 # Allow training datasets in data/ directories
 !data/**/*.csv
 
+# ML models (auto-trained on deploy, don't commit)
+*.pkl
+
 # Vercel
 .vercel/
 
