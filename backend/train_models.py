@@ -93,10 +93,10 @@ def main():
 
     # Write version manifest
     versions = {}
-    for lib in ("scikit-learn", "xgboost", "pandas", "numpy", "joblib"):
+    lib_map = {"scikit-learn": "sklearn", "xgboost": "xgboost", "pandas": "pandas", "numpy": "numpy", "joblib": "joblib"}
+    for lib, mod_name in lib_map.items():
         try:
-            mod = lib.replace("-", "_")
-            m = __import__(mod)
+            m = __import__(mod_name)
             versions[lib] = getattr(m, "__version__", "unknown")
         except ImportError:
             versions[lib] = "missing"
