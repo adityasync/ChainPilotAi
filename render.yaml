@@ -2,6 +2,7 @@ services:
   - type: web
     name: flowchainai-backend
     runtime: python
+    pythonVersion: "3.12.3"
     region: singapore  # closest to Neon DB region (ap-southeast-1)
     plan: free
     rootDir: backend
@@ -21,7 +22,7 @@ services:
       - key: FORCE_HTTPS
         value: "true"
       - key: PYTHON_VERSION
-        value: 3.12.3
+        value: "3.12.3"
       - key: AI_PROVIDER
         sync: false
       - key: AI_MODEL
