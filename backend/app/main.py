@@ -106,21 +106,29 @@ async def startup_event():
         logger.error("ML auto-training failed: %s — predictions may return 503.", e)
 
     # Validate ML artifacts path (post-training)
-    if not os.path.isdir(ML_ARTIFACTS_PATH):
+    # Auto-fix: strip 'backend/' prefix if env var was set for repo-root CWD
+    ml_path = ML_ARTIFACTS_PATH
+    if not os.path.isdir(ml_path) and ml_path.startswith("backend/"):
+        alt = ml_path[len("backend/"):]
+        if os.path.isdir(alt):
+            logger.info("CON-07: ML_ARTIFACTS_PATH '%s' not found, using '%s' instead.", ml_path, alt)
+            ml_path = alt
+
+    if not os.path.isdir(ml_path):
         logger.warning(
             "CON-07: ML_ARTIFACTS_PATH '%s' does not exist. "
             "ML predictions will return 503 until models are trained.",
-            ML_ARTIFACTS_PATH,
+            ml_path,
         )
     else:
-        pkl_files = [f for f in os.listdir(ML_ARTIFACTS_PATH) if f.endswith(".pkl")]
+        pkl_files = [f for f in os.listdir(ml_path) if f.endswith(".pkl")]
         if not pkl_files:
             logger.warning(
                 "CON-07: ML_ARTIFACTS_PATH '%s' exists but contains no .pkl model files.",
-                ML_ARTIFACTS_PATH,
+                ml_path,
             )
         else:
-            logger.info("CON-07: ML artifacts found at '%s': %s", ML_ARTIFACTS_PATH, pkl_files)
+            logger.info("CON-07: ML artifacts found at '%s': %s", ml_path, pkl_files)
 
 
 # Include API routes

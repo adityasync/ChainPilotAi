@@ -54,12 +54,14 @@ def _versions_changed(stored: dict, current: dict) -> bool:
 
 def _resolve_data_dir() -> str | None:
     """
-    Find data/processed/ directory. On Render (rootDir=backend),
-    the data is at ../data/processed/ relative to CWD.
+    Find data/processed/ directory. Tries multiple relative paths
+    to cover local dev, Render native buildpack (CWD=backend/),
+    and Docker (CWD=/app with COPY backend/ contents).
     """
     candidates = [
-        os.path.join("..", "data", "processed"),   # Render: CWD=backend/
-        os.path.join("data", "processed"),          # if CWD=project root
+        os.path.join("..", "data", "processed"),        # Render native: CWD=backend/ → repo root
+        os.path.join("data", "processed"),               # Docker or CWD=project root
+        os.path.join("backend", "data", "processed"),    # CWD=repo root
     ]
     for path in candidates:
         abs_path = os.path.abspath(path)
@@ -68,6 +70,7 @@ def _resolve_data_dir() -> str | None:
         if os.path.exists(demand) and os.path.exists(classification):
             logger.info("Found training data at %s", abs_path)
             return abs_path
+    logger.warning("No training data found. Tried: %s", [os.path.abspath(c) for c in candidates])
     return None
 
 
