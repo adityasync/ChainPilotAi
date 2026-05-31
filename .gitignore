@@ -22,11 +22,6 @@ dist-ssr/
 .DS_Store
 Thumbs.db
 
-# ML artifacts (large binary files)
-ml/models/*.pkl
-ml/models/*.joblib
-**/.ml_versions.json
-
 # Test
 .pytest_cache/
 htmlcov/
