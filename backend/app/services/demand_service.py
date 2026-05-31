@@ -8,11 +8,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..core.exceptions import NotFoundError
-from ..ml.models.statistical_forecaster import forecast_demand, compute_forecast_accuracy
-from ..ml.models.ml_demand_forecaster import MLDemandForecaster, _is_sufficient_data
 from ..models.ml_models import Prediction
 from ..models.order import Order
 from ..models.product_inventory import Product, Inventory
+
+
+def _get_forecast_demand():
+    from ..ml.models.statistical_forecaster import forecast_demand
+    return forecast_demand
+
+
+def _get_MLDemandForecaster():
+    from ..ml.models.ml_demand_forecaster import MLDemandForecaster
+    return MLDemandForecaster
+
+
+def _get_is_sufficient_data():
+    from ..ml.models.ml_demand_forecaster import _is_sufficient_data
+    return _is_sufficient_data
 
 
 async def _get_product(db: AsyncSession, product_id: int, company_id: int) -> Product:
@@ -141,9 +154,9 @@ async def get_or_create_demand_forecast(
     raw_orders = await _fetch_orders_raw(db, company_id, product_id)
 
     # Try ML forecaster first (needs ≥12 months of data)
-    if _is_sufficient_data(raw_orders):
+    if _get_is_sufficient_data()(raw_orders):
         try:
-            ml = MLDemandForecaster()
+            ml = _get_MLDemandForecaster()()
             ml_fc = ml.forecast(raw_orders, periods_ahead=6)
             forecast_value = ml_fc["ml_forecast_value"]
 
@@ -167,7 +180,7 @@ async def get_or_create_demand_forecast(
             logging.getLogger(__name__).warning(f"ML forecast failed for product {product_id}, falling back to statistical: {e}")
 
     # Fallback: statistical forecaster
-    fc = forecast_demand(raw_orders, periods_ahead=1)
+    fc = _get_forecast_demand()(raw_orders, periods_ahead=1)
     forecast_value = fc["forecast_value"]
 
     prediction = await _persist_forecast(db, company_id, product_id, forecast_value)
@@ -321,12 +334,14 @@ async def get_portfolio_demand_summary(
         .filter(Product.company_id == company_id)
     ) or 0
 
-    # Compute portfolio-level forecast accuracy
-    # Get all products with orders
+    # Compute portfolio-level forecast accuracy (best-effort)
     all_product_ids = list(product_totals.keys())
-    portfolio_accuracy = await _compute_portfolio_accuracy(db, company_id, all_product_ids)
+    try:
+        portfolio_accuracy = await _compute_portfolio_accuracy(db, company_id, all_product_ids)
+    except Exception:
+        portfolio_accuracy = {"mape": None, "bias": None, "products_with_data": 0}
 
-    # Classify demand patterns across products (best-effort, don't fail portfolio)
+    # Classify demand patterns across products (best-effort)
     try:
         demand_patterns = await get_demand_patterns_summary(db, company_id)
     except Exception:
@@ -377,7 +392,7 @@ async def _compute_portfolio_accuracy(
             prior_orders = raw_orders[:_count_orders_up_to_month(raw_orders, i)]
             if not prior_orders:
                 continue
-            fc = forecast_demand(prior_orders, periods_ahead=1)
+            fc = _get_forecast_demand()(prior_orders, periods_ahead=1)
             actual = quantities[i]
             if actual > 0:
                 pct_err = abs(fc["forecast_value"] - actual) / actual * 100
@@ -469,7 +484,7 @@ async def get_forecast_accuracy(
         if not prior_orders:
             continue
 
-        fc = forecast_demand(prior_orders, periods_ahead=1)
+        fc = _get_forecast_demand()(prior_orders, periods_ahead=1)
         actual = quantities[i]
 
         if actual > 0:
@@ -508,9 +523,9 @@ async def get_forecast_accuracy(
     }
 
     # Add ML accuracy comparison if sufficient data
-    if _is_sufficient_data(raw_orders):
+    if _get_is_sufficient_data()(raw_orders):
         try:
-            ml = MLDemandForecaster()
+            ml = _get_MLDemandForecaster()()
             ml_mape, ml_bias, ml_rmse, ml_accuracy_data = _ml_walk_forward_accuracy(raw_orders)
             result["ml_mape"] = ml_mape
             result["ml_bias"] = ml_bias
@@ -552,7 +567,7 @@ def _ml_walk_forward_accuracy(
 
         try:
             # Train a new forecaster per step (walk-forward requires retraining)
-            ml = MLDemandForecaster()
+            ml = _get_MLDemandForecaster()()
             ml_fc = ml.forecast(prior_orders, periods_ahead=1)
             predicted = ml_fc["forecast_value"]
         except Exception:
@@ -597,7 +612,7 @@ async def get_demand_insights(
     product = await _get_product(db, product_id, company_id)
     raw_orders = await _fetch_orders_raw(db, company_id, product_id)
 
-    if not _is_sufficient_data(raw_orders):
+    if not _get_is_sufficient_data()(raw_orders):
         return {
             "product_id": product_id,
             "product_name": product.product_name,
@@ -610,7 +625,7 @@ async def get_demand_insights(
         }
 
     try:
-        ml = MLDemandForecaster()
+        ml = _get_MLDemandForecaster()()
         fc = ml.forecast(raw_orders, periods_ahead=6)
 
         return {
@@ -653,11 +668,11 @@ async def get_demand_patterns_summary(
     patterns: dict[str, int] = defaultdict(int)
     for pid in product_ids[:20]:  # cap at 20 for performance
         raw_orders = await _fetch_orders_raw(db, company_id, pid)
-        if not _is_sufficient_data(raw_orders):
+        if not _get_is_sufficient_data()(raw_orders):
             patterns["insufficient_data"] += 1
             continue
         try:
-            ml = MLDemandForecaster()
+            ml = _get_MLDemandForecaster()()
             pattern_info = ml.classify_demand_pattern(raw_orders)
             patterns[pattern_info["pattern"]] += 1
         except Exception:
