@@ -357,19 +357,19 @@ const InventoryPage = () => {
   return (
     <div className="py-8 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">Inventory</h1>
-          <p className="text-lg text-[#86868b] dark:text-[#98989d] mt-1">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">Inventory</h1>
+          <p className="text-sm sm:text-lg text-[#86868b] dark:text-[#98989d] mt-1">
             {products.length} products across{' '}
             {new Set(products.flatMap((p) => p.warehouses.map((w) => w.warehouse))).size} warehouses
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button onClick={fetchInventory} className="p-2.5 rounded-lg text-[#86868b] dark:text-[#98989d] hover:text-[#1d1d1f] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2c2c2e] transition-all" title="Refresh">
             <RefreshCw className="w-5 h-5" />
           </button>
-          <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] rounded-lg text-sm font-medium hover:bg-black dark:hover:bg-gray-200 transition-all">
+          <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] rounded-lg text-sm font-medium hover:bg-black dark:hover:bg-gray-200 transition-all">
             <Plus className="w-4 h-4" />
             Add product
           </button>

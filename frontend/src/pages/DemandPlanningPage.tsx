@@ -208,8 +208,8 @@ const DemandPlanningPage = () => {
   if (!products.length) {
     return (
       <div className="py-8">
-        <h1 className="text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">Demand Planning</h1>
-        <p className="text-lg text-[#86868b] dark:text-[#98989d] mt-2">Add products and order history to start forecasting.</p>
+        <h1 className="text-2xl sm:text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">Demand Planning</h1>
+        <p className="text-sm sm:text-lg text-[#86868b] dark:text-[#98989d] mt-2">Add products and order history to start forecasting.</p>
       </div>
     );
   }
@@ -257,17 +257,17 @@ const DemandPlanningPage = () => {
 
   return (
     <div className="py-8 space-y-8">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">Demand Planning</h1>
-          <p className="text-lg text-[#86868b] dark:text-[#98989d] mt-1">Portfolio overview across all products</p>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">Demand Planning</h1>
+          <p className="text-sm sm:text-lg text-[#86868b] dark:text-[#98989d] mt-1">Portfolio overview across all products</p>
         </div>
-        <div className="flex gap-1.5 bg-gray-100 dark:bg-[#2c2c2e] rounded-lg p-1 self-start">
+        <div className="flex gap-1 bg-gray-100 dark:bg-[#2c2c2e] rounded-lg p-0.5 self-start">
           {periods.map((p) => (
             <button
               key={p.id}
               onClick={() => setSelectedPeriod(p.id as 'week' | 'month' | 'quarter')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
                 selectedPeriod === p.id
                   ? 'bg-white dark:bg-[#3a3a3c] text-[#1d1d1f] dark:text-white shadow-sm'
                   : 'text-[#86868b] dark:text-[#98989d] hover:text-[#1d1d1f] dark:hover:text-white'
@@ -518,9 +518,9 @@ const ProductDetailView = ({
         </button>
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">{summary.product_name}</h1>
+            <h1 className="text-2xl sm:text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">{summary.product_name}</h1>
             <div className="flex items-center gap-3 mt-1">
-              <p className="text-lg text-[#86868b] dark:text-[#98989d]">Demand forecast & analysis</p>
+              <p className="text-sm sm:text-lg text-[#86868b] dark:text-[#98989d]">Demand forecast & analysis</p>
               {demandPattern && (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   demandPattern.pattern === 'stable' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :

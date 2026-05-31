@@ -180,10 +180,10 @@ const InsightsPage = () => {
 
   return (
     <div className="py-8 space-y-8">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">Insights</h1>
-          <p className="text-lg text-[#86868b] dark:text-[#98989d] mt-1">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">Insights</h1>
+          <p className="text-sm sm:text-lg text-[#86868b] dark:text-[#98989d] mt-1">
             {activeTab === 'insights' ? (
               <>
                 {insights.length} insights
@@ -195,11 +195,11 @@ const InsightsPage = () => {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={handleRunAnalysis}
             disabled={runningAnalysis}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] rounded-lg text-sm font-medium hover:bg-black dark:hover:bg-gray-200 transition-all disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] rounded-lg text-sm font-medium hover:bg-black dark:hover:bg-gray-200 transition-all disabled:opacity-60"
           >
             {runningAnalysis ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
             {runningAnalysis ? 'Running...' : 'Run ML Analysis'}
@@ -207,7 +207,7 @@ const InsightsPage = () => {
           <button
             onClick={handleGenerateInsights}
             disabled={generating}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0071e3] text-white rounded-lg text-sm font-medium hover:bg-[#0077ed] transition-all disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-[#0071e3] text-white rounded-lg text-sm font-medium hover:bg-[#0077ed] transition-all disabled:opacity-60"
           >
             <Sparkles className="w-4 h-4" />
             {generating ? 'Generating...' : 'Generate AI Insights'}

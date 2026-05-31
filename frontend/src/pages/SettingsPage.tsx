@@ -65,11 +65,11 @@ const SettingsPage = () => {
 
   return (
     <div className="py-8 max-w-2xl">
-      <div className="mb-12">
-        <h1 className="text-5xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight mb-2">
+      <div className="mb-6 sm:mb-12">
+        <h1 className="text-2xl sm:text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight mb-1 sm:mb-2">
           Settings
         </h1>
-        <p className="text-xl text-[#86868b] dark:text-[#98989d]">
+        <p className="text-sm sm:text-lg text-[#86868b] dark:text-[#98989d]">
           Manage your preferences
         </p>
       </div>

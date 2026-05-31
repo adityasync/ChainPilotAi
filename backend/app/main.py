@@ -98,7 +98,14 @@ async def startup_event():
         logger.error("Database connection failed: %s", e)
         logger.error("Check DATABASE_URL in your environment variables.")
 
-    # CON-07: Validate ML artifacts path
+    # CON-07: Auto-train ML models if missing or library versions changed
+    try:
+        from .ml.startup import ensure_ml_ready
+        ensure_ml_ready()
+    except Exception as e:
+        logger.error("ML auto-training failed: %s — predictions may return 503.", e)
+
+    # Validate ML artifacts path (post-training)
     if not os.path.isdir(ML_ARTIFACTS_PATH):
         logger.warning(
             "CON-07: ML_ARTIFACTS_PATH '%s' does not exist. "

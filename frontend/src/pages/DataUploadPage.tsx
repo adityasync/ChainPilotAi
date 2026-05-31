@@ -75,10 +75,10 @@ const DataUploadPage: React.FC = () => {
     return (
         <div className="py-8 space-y-8">
             <div>
-                <h1 className="text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">
+                <h1 className="text-2xl sm:text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">
                     Import Data
                 </h1>
-                <p className="text-lg text-[#86868b] dark:text-[#98989d] mt-1">
+                <p className="text-sm sm:text-lg text-[#86868b] dark:text-[#98989d] mt-1">
                     Upload a CSV to populate products, inventory, suppliers, and orders in one go.
                 </p>
             </div>

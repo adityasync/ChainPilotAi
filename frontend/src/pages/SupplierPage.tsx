@@ -177,12 +177,12 @@ const SupplierPage = () => {
 
   return (
     <div className="py-8">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-        <div>
-          <h1 className="text-5xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-6 sm:mb-12">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight mb-1 sm:mb-2">
             Suppliers
           </h1>
-          <p className="text-xl text-[#86868b] dark:text-[#98989d]">
+          <p className="text-sm sm:text-lg text-[#86868b] dark:text-[#98989d]">
             {totalActive} active of {total} suppliers
           </p>
         </div>
@@ -190,7 +190,7 @@ const SupplierPage = () => {
         <button
           onClick={() => setShowCreateModal(true)}
           className="
-            inline-flex items-center gap-2 px-6 py-3
+            inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3
             bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] rounded-full
             text-sm font-medium
             hover:bg-black dark:hover:bg-gray-200 transition-all duration-200

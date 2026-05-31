@@ -148,10 +148,10 @@ const DashboardPage = () => {
 
   return (
     <div className="py-8 space-y-8">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">Dashboard</h1>
-          <p className="text-lg text-[#86868b] dark:text-[#98989d] mt-1">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-4xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">Dashboard</h1>
+          <p className="text-sm sm:text-lg text-[#86868b] dark:text-[#98989d] mt-1">
             Supply chain overview for your {kpis.total_products} products
           </p>
         </div>

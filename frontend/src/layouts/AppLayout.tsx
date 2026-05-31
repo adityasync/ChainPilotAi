@@ -13,7 +13,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       <Sidebar />
 
       {/* Main content area - offset for sidebar on desktop, bottom padding for mobile nav */}
-      <div className="lg:pl-16 min-h-screen pb-20 lg:pb-0">
+      <div className="lg:pl-16 min-h-screen pb-20 lg:pb-0 overflow-x-hidden">
         <TopBar />
 
         {/* Page content */}

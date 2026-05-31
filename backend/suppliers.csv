@@ -1,0 +1,51 @@
+Supplier Name,Category,Country,Avg Lead Time,Reliability Score
+Acme Electronics Co.,Electronics,China,14,0.85
+Global Parts Ltd.,Electronics,Taiwan,21,0.72
+NexGen Components,Electronics,South Korea,10,0.91
+CircuitMaster Inc.,Electronics,Japan,12,0.88
+Silicon Valley Supply,Electronics,USA,5,0.95
+EuroChip GmbH,Electronics,Germany,18,0.79
+Pacific Trading Inc.,Office Supplies,Japan,7,0.95
+Continental Supply Co.,Office Supplies,Germany,12,0.88
+PaperWorld Ltd.,Office Supplies,Canada,6,0.93
+OfficeDirect Wholesale,Office Supplies,USA,3,0.97
+Scribble & Co.,Office Supplies,UK,9,0.91
+Euro Furniture GmbH,Furniture,Italy,30,0.65
+Scandinavian Design AB,Furniture,Sweden,25,0.78
+ModernHome Mfg.,Furniture,Poland,22,0.74
+American Oak Works,Furniture,USA,15,0.86
+BambooCraft Asia,Furniture,Vietnam,28,0.7
+CleanPro Industries,Cleaning,USA,5,0.97
+GreenClean Products,Cleaning,Canada,7,0.94
+SparkleChem Corp.,Cleaning,Germany,10,0.89
+EcoSafe Cleaning,Cleaning,Netherlands,8,0.92
+SafeGuard Manufacturing,Safety,USA,8,0.93
+Industrial Safety Corp.,Safety,Germany,11,0.89
+ProShield Equipment,Safety,UK,9,0.91
+ChinaSafe Export,Safety,China,16,0.8
+PackRight Solutions,Packaging,China,18,0.8
+GreenPack Eco,Packaging,Netherlands,13,0.84
+BoxMaster Corp.,Packaging,USA,4,0.96
+WrapIt International,Packaging,South Korea,15,0.82
+FreshSource Distributors,Food & Beverage,Brazil,15,0.82
+Quality Foods International,Food & Beverage,India,20,0.75
+Organic Harvest Co.,Food & Beverage,USA,6,0.94
+Mediterranean Imports,Food & Beverage,Italy,12,0.87
+Asia Pacific Foods,Food & Beverage,Thailand,18,0.79
+Nordic Provisions,Food & Beverage,Sweden,14,0.85
+TechParts Direct,Electronics,Vietnam,16,0.87
+Shenzhen Digital Ltd.,Electronics,China,19,0.76
+Tokyo Precision Co.,Electronics,Japan,11,0.9
+Midwest Supply Hub,Office Supplies,USA,4,0.98
+London Stationers,Office Supplies,UK,8,0.92
+HomeStyle Furniture,Furniture,Poland,28,0.7
+Iberian Woodcraft,Furniture,Spain,20,0.77
+EcoClean Products,Cleaning,Canada,6,0.96
+HygieneFirst GmbH,Cleaning,Austria,9,0.9
+WorkSafe Solutions,Safety,Australia,13,0.86
+TotalProtect Inc.,Safety,Canada,7,0.93
+EcoWrap Sustainable,Packaging,Sweden,10,0.88
+ShipReady Corp.,Packaging,USA,5,0.95
+Gourmet Imports LLC,Food & Beverage,France,16,0.81
+Sunrise Farms Direct,Food & Beverage,Mexico,11,0.88
+Harvest Moon Trading,Food & Beverage,New Zealand,22,0.76

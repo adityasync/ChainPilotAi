@@ -271,6 +271,17 @@ h6 {
    RESPONSIVE
    ============================================ */
 
+/* Safe area for mobile devices with notches/home indicators */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

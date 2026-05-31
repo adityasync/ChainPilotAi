@@ -23,14 +23,14 @@ const navItems = [
 
 const BottomNav = () => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-[#1c1c1e] border-t border-gray-100 dark:border-[#38383a] lg:hidden">
-      <div className="flex items-center justify-around px-1 py-1 overflow-x-auto no-scrollbar">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-[#1c1c1e] border-t border-gray-100 dark:border-[#38383a] lg:hidden safe-area-bottom">
+      <div className="flex items-center justify-around px-0.5 py-1">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) => `
-              flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg min-w-0 flex-shrink-0
+              flex flex-col items-center gap-0.5 px-1 sm:px-2 py-1.5 rounded-lg min-w-0
               transition-colors duration-200
               ${isActive
                 ? 'text-[#0071e3]'
@@ -39,7 +39,7 @@ const BottomNav = () => {
             `}
           >
             <item.icon className="w-5 h-5 flex-shrink-0" />
-            <span className="text-[10px] font-medium truncate">{item.label}</span>
+            <span className="text-[10px] font-medium truncate hidden min-[380px]:block">{item.label}</span>
           </NavLink>
         ))}
       </div>

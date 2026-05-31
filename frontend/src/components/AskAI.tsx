@@ -16,14 +16,14 @@ const AskAI = () => {
   };
 
   return (
-    <section className="mb-20">
-      <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8">
-        <div className="flex items-center gap-2 mb-6">
+    <section className="mb-24 sm:mb-20">
+      <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-4 sm:p-8">
+        <div className="flex items-center gap-2 mb-4 sm:mb-6">
           <Sparkles className="w-5 h-5 text-[#0071e3]" />
           <h2 className="text-lg font-medium text-[#1d1d1f] dark:text-white">Ask AI</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex gap-3 mb-6">
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-6">
           <input
             type="text"
             value={question}
@@ -31,13 +31,14 @@ const AskAI = () => {
             placeholder="Ask about your supply chain..."
             disabled={isStreaming}
             className="
-              flex-1 px-5 py-3.5 rounded-xl
+              flex-1 px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl
               bg-[#f5f5f7] dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white
               placeholder:text-[#86868b] dark:placeholder:text-[#98989d]
               outline-none
               transition-all duration-200
               focus:ring-2 focus:ring-[#0071e3]/20
               disabled:opacity-60
+              min-w-0
             "
           />
           {isStreaming ? (
@@ -45,9 +46,9 @@ const AskAI = () => {
               type="button"
               onClick={cancel}
               className="
-                inline-flex items-center gap-2 px-6 py-3.5
+                inline-flex items-center justify-center gap-2 px-5 py-3 sm:px-6 sm:py-3.5
                 bg-[#ff3b30] dark:bg-red-600 text-white rounded-xl
-                text-sm font-medium
+                text-sm font-medium flex-shrink-0
                 hover:bg-[#e0352b] transition-all duration-200
               "
             >
@@ -59,9 +60,9 @@ const AskAI = () => {
               type="submit"
               disabled={!question.trim()}
               className="
-                inline-flex items-center gap-2 px-6 py-3.5
+                inline-flex items-center justify-center gap-2 px-5 py-3 sm:px-6 sm:py-3.5
                 bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] rounded-xl
-                text-sm font-medium
+                text-sm font-medium flex-shrink-0
                 hover:bg-black dark:hover:bg-gray-200 transition-all duration-200
                 disabled:opacity-40 disabled:cursor-not-allowed
               "
