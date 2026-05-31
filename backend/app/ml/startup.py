@@ -179,16 +179,21 @@ def ensure_ml_ready() -> None:
     model_dir = os.path.join("app", "ml", "models")
     versions_file = os.path.join(model_dir, ".ml_versions.json")
 
-    logger.info("═══ ML Startup Check ═══")
+    print("═══ ML Startup Check ═══", flush=True)
 
     # 1. Resolve training data location
     data_dir = _resolve_data_dir()
     if data_dir is None:
-        logger.error(
-            "Training data not found! Expected data/processed/demand_data.csv and "
-            "classification_data.csv. ML models cannot be trained."
+        print(
+            "ERROR: Training data not found! Expected data/processed/demand_data.csv and "
+            "classification_data.csv. ML models cannot be trained.",
+            flush=True,
         )
-        logger.info("═══ ML Startup Check Done (no data) ═══")
+        print(f"CWD: {os.getcwd()}", flush=True)
+        for p in ["../data/processed", "data/processed", "backend/data/processed"]:
+            ap = os.path.abspath(p)
+            print(f"  {p} -> {ap} exists={os.path.exists(ap)}", flush=True)
+        print("═══ ML Startup Check Done (no data) ═══", flush=True)
         return
 
     # 2. Read stored versions
@@ -202,41 +207,40 @@ def ensure_ml_ready() -> None:
 
     # 3. Get current versions
     current_versions = _get_library_versions()
-    logger.info("ML library versions: %s", current_versions)
+    print(f"ML library versions: {current_versions}", flush=True)
 
     # 4. Decide whether to train
     needs_training = False
 
     if not _all_models_present(model_dir):
-        logger.info("Model files missing — training required.")
+        print("Model files missing — training required.", flush=True)
         needs_training = True
     elif _versions_changed(stored_versions, current_versions):
-        logger.info(
-            "ML library versions changed (%s → %s) — retraining.",
-            stored_versions, current_versions,
-        )
+        print(f"ML library versions changed ({stored_versions} → {current_versions}) — retraining.", flush=True)
         needs_training = True
     else:
-        logger.info("All models present and versions unchanged — skipping training.")
+        print("All models present and versions unchanged — skipping training.", flush=True)
 
     # 5. Train if needed
     if needs_training:
         start = time.time()
-        logger.info("Starting model training from real data...")
+        print(f"Starting model training from {data_dir}...", flush=True)
         try:
             results = _train_all_models(model_dir, data_dir)
             elapsed = time.time() - start
-            logger.info("Training complete in %.1fs: %s", elapsed, results)
+            print(f"Training complete in {elapsed:.1f}s: {results}", flush=True)
 
             # Store versions only on successful training
             try:
                 with open(versions_file, "w") as f:
                     json.dump(current_versions, f, indent=2)
-                logger.info("Stored version manifest → %s", versions_file)
+                print(f"Stored version manifest → {versions_file}", flush=True)
             except Exception as e:
-                logger.warning("Could not write version manifest: %s", e)
+                print(f"Could not write version manifest: {e}", flush=True)
         except Exception as e:
-            logger.error("Training failed: %s", e)
+            print(f"Training failed: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
             # Don't store versions — will retry next restart
 
-    logger.info("═══ ML Startup Check Done ═══")
+    print("═══ ML Startup Check Done ═══", flush=True)
