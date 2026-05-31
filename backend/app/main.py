@@ -98,12 +98,11 @@ async def startup_event():
         logger.error("Database connection failed: %s", e)
         logger.error("Check DATABASE_URL in your environment variables.")
 
-    # CON-07: Auto-train ML models if missing or library versions changed
-    try:
-        from .ml.startup import ensure_ml_ready
-        ensure_ml_ready()
-    except Exception as e:
-        logger.error("ML auto-training failed: %s — predictions may return 503.", e)
+    # CON-07: ML training disabled on startup to avoid OOM on free tier.
+    # Models should be pre-trained and committed to the repo, or trained via
+    # a separate script before deploy. The demand endpoint degrades gracefully
+    # without ML models (no forecast accuracy or pattern classification).
+    logger.info("ML training skipped on startup (use train_models.py to pre-train).")
 
     # Validate ML artifacts path (post-training)
     # Auto-fix: strip 'backend/' prefix if env var was set for repo-root CWD
