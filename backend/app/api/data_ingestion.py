@@ -15,7 +15,7 @@ from ..core.exceptions import ValidationError, AppError
 from ..models.product_inventory import Product, Inventory
 from ..models.supplier_shipment import Supplier, Shipment
 from ..models.order import Order
-from .ml_integration import insight_engine
+from .ml_integration import _get_insight_engine
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -402,7 +402,7 @@ async def upload_data(
             for sup in suppliers
         ]
 
-        analysis_results = await insight_engine.run_enhanced_analysis(
+        analysis_results = await _get_insight_engine().run_enhanced_analysis(
             db=db,
             company_id=company_id,
             product_data=product_data,
