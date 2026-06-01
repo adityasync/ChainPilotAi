@@ -355,11 +355,14 @@ async def get_portfolio_insights(
     This is separated from get_portfolio_demand_summary because it involves
     on-the-fly ML training that can take 10-30+ seconds on constrained hardware.
     """
-    # Get all product IDs with orders
+    # Get all product IDs with orders (ordered by total volume descending
+    # so the top-20 slice is deterministic and always picks the highest-volume products)
     result = await db.execute(
-        select(func.distinct(Order.product_id))
+        select(Order.product_id, func.sum(Order.quantity).label("total_qty"))
         .join(Product, Order.product_id == Product.id)
         .filter(Product.company_id == company_id)
+        .group_by(Order.product_id)
+        .order_by(func.sum(Order.quantity).desc())
     )
     all_product_ids = [row[0] for row in result.all()]
 
@@ -677,11 +680,13 @@ async def get_demand_patterns_summary(
     company_id: int,
 ) -> dict[str, int]:
     """Classify demand patterns across all products for the company."""
-    # Get all product IDs with orders
+    # Get all product IDs with orders (deterministic order by volume)
     result = await db.execute(
-        select(func.distinct(Order.product_id))
+        select(Order.product_id, func.sum(Order.quantity).label("total_qty"))
         .join(Product, Order.product_id == Product.id)
         .filter(Product.company_id == company_id)
+        .group_by(Order.product_id)
+        .order_by(func.sum(Order.quantity).desc())
     )
     product_ids = [row[0] for row in result.all()]
 
