@@ -325,7 +325,7 @@ erDiagram
     COMPANY ||--|{ PREDICTION : "tracks"
     COMPANY ||--|{ INSIGHT : "receives"
     PRODUCT ||--|{ INVENTORY : "stored_in"
-    PRODUCT ||--{ ORDER : "ordered_via"
+    PRODUCT ||--|{ ORDER : "ordered_via"
     SUPPLIER ||--|{ SHIPMENT : "ships"
 
     COMPANY {

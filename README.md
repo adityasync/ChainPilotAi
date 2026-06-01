@@ -93,22 +93,23 @@
 
 ## 🏗 Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    React Frontend                        │
-│  TypeScript · Vite · TailwindCSS · Recharts             │
-└────────────────────────┬────────────────────────────────┘
-                         │ REST API (JSON)
-┌────────────────────────▼────────────────────────────────┐
-│                   FastAPI Backend                         │
-│  Auth · CRUD · Business Logic · AI Chat                  │
-├──────────────────────────────────────────────────────────┤
-│                   ML Engine (scikit-learn)                │
-│  Forecasting · Classification · Risk Scoring              │
-├──────────────────────────────────────────────────────────┤
-│                   PostgreSQL (Neon)                       │
-│  Products · Orders · Inventory · Suppliers · Insights     │
-└──────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Frontend["🖥 React Frontend"]
+        FE["TypeScript · Vite · TailwindCSS · Recharts"]
+    end
+
+    subgraph Backend["⚙️ FastAPI Backend"]
+        API["Auth · CRUD · Business Logic · AI Chat"]
+        ML["ML Engine (scikit-learn)\nForecasting · Classification · Risk Scoring"]
+    end
+
+    DB[("🗄 PostgreSQL (Neon)\nProducts · Orders · Inventory · Suppliers · Insights")]
+
+    FE -->|"REST API (JSON)"| API
+    API --> ML
+    API --> DB
+    ML --> DB
 ```
 
 ### Project Structure
