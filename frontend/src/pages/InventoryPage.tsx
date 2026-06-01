@@ -7,6 +7,7 @@ import {
 import { inventoryAPI, mlAPI } from '../services/apiService';
 import { usePagination } from '../hooks/usePagination';
 import PaginationControls from '../components/PaginationControls';
+import { KPIGridSkeleton, SearchSkeleton, FilterBarSkeleton, TableSkeleton, SectionTitleSkeleton } from '../components/Skeleton';
 
 /* ─── Types ─── */
 
@@ -343,8 +344,12 @@ const InventoryPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin" />
+      <div className="py-8 space-y-8">
+        <SectionTitleSkeleton />
+        <KPIGridSkeleton count={5} />
+        <SearchSkeleton />
+        <FilterBarSkeleton />
+        <TableSkeleton rows={8} cols={6} />
       </div>
     );
   }
@@ -463,42 +468,42 @@ const InventoryPage = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 dark:border-[#2c2c2e]">
-                <th className="w-12 px-4 py-4">
+                <th className="w-12 px-3 sm:px-4 py-3 sm:py-4">
                   <input type="checkbox" checked={allPageSelected} onChange={toggleSelectAll}
                     className="w-4 h-4 rounded border-gray-300 dark:border-[#48484a] text-[#0071e3] focus:ring-[#0071e3] cursor-pointer" />
                 </th>
-                <th className="text-left px-6 py-4">
+                <th className="text-left px-4 sm:px-6 py-3 sm:py-4">
                   <button onClick={() => toggleSort('name')} className="flex items-center text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider hover:text-[#1d1d1f] dark:hover:text-white transition-colors">
                     Product <SortIndicator field="name" />
                   </button>
                 </th>
-                <th className="text-left px-6 py-4">
+                <th className="text-left px-4 sm:px-6 py-3 sm:py-4">
                   <button onClick={() => toggleSort('stock')} className="flex items-center text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider hover:text-[#1d1d1f] dark:hover:text-white transition-colors">
                     Stock <SortIndicator field="stock" />
                   </button>
                 </th>
-                <th className="text-left px-6 py-4">
+                <th className="text-left px-4 sm:px-6 py-3 sm:py-4">
                   <button onClick={() => toggleSort('status')} className="flex items-center text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider hover:text-[#1d1d1f] dark:hover:text-white transition-colors">
                     Status <SortIndicator field="status" />
                   </button>
                 </th>
-                <th className="text-right px-6 py-4">
+                <th className="text-right px-6 py-4 hidden sm:table-cell">
                   <button onClick={() => toggleSort('price')} className="flex items-center text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider hover:text-[#1d1d1f] dark:hover:text-white transition-colors ml-auto">
                     Unit Cost <SortIndicator field="price" />
                   </button>
                 </th>
-                <th className="text-right px-6 py-4">
+                <th className="text-right px-6 py-4 hidden sm:table-cell">
                   <button onClick={() => toggleSort('value')} className="flex items-center text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider hover:text-[#1d1d1f] dark:hover:text-white transition-colors ml-auto">
                     Value <SortIndicator field="value" />
                   </button>
                 </th>
-                <th className="text-center px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">WH</th>
-                <th className="text-left px-6 py-4">
+                <th className="text-center px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider hidden md:table-cell">WH</th>
+                <th className="text-left px-6 py-4 hidden md:table-cell">
                   <button onClick={() => toggleSort('updated')} className="flex items-center text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider hover:text-[#1d1d1f] dark:hover:text-white transition-colors">
                     Updated <SortIndicator field="updated" />
                   </button>
                 </th>
-                <th className="w-24 px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Actions</th>
+                <th className="w-20 sm:w-24 px-3 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -514,18 +519,18 @@ const InventoryPage = () => {
                     className={`border-b border-gray-50 dark:border-[#2c2c2e] last:border-0 cursor-pointer transition-colors ${
                       isSelected ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-[#fafafa] dark:hover:bg-[#2c2c2e]/50'
                     }`}>
-                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-3 sm:px-4 py-3 sm:py-4" onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" checked={isChecked} onChange={() => toggleSelect(product.id)}
                         className="w-4 h-4 rounded border-gray-300 dark:border-[#48484a] text-[#0071e3] focus:ring-[#0071e3] cursor-pointer" />
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-[#1d1d1f] dark:text-white">{product.product_name}</p>
+                    <td className="px-4 sm:px-6 py-3 sm:py-4">
+                      <p className="text-sm font-medium text-[#1d1d1f] dark:text-white truncate max-w-[140px] sm:max-w-none">{product.product_name}</p>
                       <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 dark:bg-[#2c2c2e] text-[#86868b]">{product.category}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4">
                       {product.warehouse_count > 0 ? (
-                        <div className="flex items-center gap-3">
-                          <div className="w-20">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="w-14 sm:w-20 hidden sm:block">
                             <div className="h-1.5 bg-gray-100 dark:bg-[#38383a] rounded-full overflow-hidden">
                               <div className={`h-full rounded-full ${stockBarColor(status.text)}`} style={{ width: `${stockPct}%` }} />
                             </div>
@@ -536,22 +541,22 @@ const InventoryPage = () => {
                         <span className="text-sm text-[#aeaeb2]">No stock records</span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.bg} ${status.color}`}>
+                    <td className="px-4 sm:px-6 py-3 sm:py-4">
+                      <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-medium ${status.bg} ${status.color}`}>
                         {status.icon}
                         {status.text}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right text-sm text-[#1d1d1f] dark:text-white">${product.unit_cost.toFixed(2)}</td>
-                    <td className="px-6 py-4 text-right text-sm font-medium text-[#1d1d1f] dark:text-white">{formatCurrency(product.inventory_value)}</td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-6 py-4 text-right text-sm text-[#1d1d1f] dark:text-white hidden sm:table-cell">${product.unit_cost.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-right text-sm font-medium text-[#1d1d1f] dark:text-white hidden sm:table-cell">{formatCurrency(product.inventory_value)}</td>
+                    <td className="px-6 py-4 text-center hidden md:table-cell">
                       <span className="inline-flex items-center gap-1 text-sm text-[#86868b] dark:text-[#98989d]">
                         <MapPin className="w-3.5 h-3.5" />
                         {product.warehouse_count}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#86868b] dark:text-[#98989d]">{formatRelativeTime(product.last_updated)}</td>
-                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-6 py-4 text-sm text-[#86868b] dark:text-[#98989d] hidden md:table-cell">{formatRelativeTime(product.last_updated)}</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-1">
                         <button onClick={() => setShowEditModal(product)}
                           className="p-2 rounded-lg text-[#86868b] dark:text-[#98989d] hover:text-[#0071e3] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all">
@@ -618,12 +623,12 @@ const InventoryPage = () => {
 const KPICard = ({ icon, label, value, subtitle, color, bg }: {
   icon: React.ReactNode; label: string; value: string; subtitle?: string; color: string; bg: string;
 }) => (
-  <div className="bg-white dark:bg-[#1c1c1e] rounded-xl p-5 flex items-start gap-4">
-    <div className={`${bg} ${color} p-2.5 rounded-lg`}>{icon}</div>
-    <div>
-      <p className="text-sm text-[#86868b] dark:text-[#98989d]">{label}</p>
-      <p className={`text-2xl font-semibold ${color} tracking-tight`}>{value}</p>
-      {subtitle && <p className="text-xs text-[#aeaeb2] mt-0.5">{subtitle}</p>}
+  <div className="bg-white dark:bg-[#1c1c1e] rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+    <div className={`${bg} ${color} p-2 sm:p-2.5 rounded-lg shrink-0`}>{icon}</div>
+    <div className="min-w-0">
+      <p className="text-xs sm:text-sm text-[#86868b] dark:text-[#98989d] truncate">{label}</p>
+      <p className={`text-xl sm:text-2xl font-semibold ${color} tracking-tight`}>{value}</p>
+      {subtitle && <p className="text-[10px] sm:text-xs text-[#aeaeb2] mt-0.5 truncate">{subtitle}</p>}
     </div>
   </div>
 );

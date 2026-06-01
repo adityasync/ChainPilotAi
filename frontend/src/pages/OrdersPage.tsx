@@ -3,6 +3,7 @@ import { Search, Plus, X, ShoppingCart, Package, MapPin, Trash2, Edit3, Upload }
 import { orderAPI, inventoryAPI } from '../services/apiService';
 import { usePagination } from '../hooks/usePagination';
 import PaginationControls from '../components/PaginationControls';
+import { SectionTitleSkeleton, SearchSkeleton, TableSkeleton } from '../components/Skeleton';
 
 interface Order {
   id: number;
@@ -90,8 +91,10 @@ const OrdersPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin" />
+      <div className="py-8 space-y-8">
+        <SectionTitleSkeleton />
+        <SearchSkeleton />
+        <TableSkeleton rows={8} cols={5} />
       </div>
     );
   }
@@ -156,27 +159,27 @@ const OrdersPage = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-[#38383a]">
-                    <th className="text-left px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Order ID</th>
-                    <th className="text-left px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Product</th>
-                    <th className="text-left px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Date</th>
-                    <th className="text-left px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Quantity</th>
-                    <th className="text-left px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Region</th>
-                    <th className="text-right px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Actions</th>
+                    <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider hidden sm:table-cell">Order ID</th>
+                    <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Product</th>
+                    <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Date</th>
+                    <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Qty</th>
+                    <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider hidden md:table-cell">Region</th>
+                    <th className="text-right px-4 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginateData(filteredOrders).map((order) => (
                     <tr key={order.id} className="border-b border-gray-50 dark:border-[#2c2c2e] hover:bg-[#fafafa] dark:hover:bg-[#2c2c2e]/50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-medium text-[#1d1d1f] dark:text-white">#{order.id}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium text-[#1d1d1f] dark:text-white hidden sm:table-cell">#{order.id}</td>
+                      <td className="px-4 sm:px-6 py-3 sm:py-4">
                         <div className="flex items-center gap-2">
-                          <Package className="w-4 h-4 text-[#86868b] dark:text-[#98989d]" />
-                          <span className="text-sm text-[#1d1d1f] dark:text-white">{order.product_name || `Product #${order.product_id}`}</span>
+                          <Package className="w-4 h-4 text-[#86868b] dark:text-[#98989d] flex-shrink-0 hidden sm:block" />
+                          <span className="text-sm text-[#1d1d1f] dark:text-white truncate max-w-[140px] sm:max-w-none">{order.product_name || `Product #${order.product_id}`}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-[#86868b] dark:text-[#98989d]">{order.order_date}</td>
-                      <td className="px-6 py-4 text-sm font-medium text-[#1d1d1f] dark:text-white">{order.quantity.toLocaleString()}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-[#86868b] dark:text-[#98989d] whitespace-nowrap">{order.order_date}</td>
+                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium text-[#1d1d1f] dark:text-white">{order.quantity.toLocaleString()}</td>
+                      <td className="px-4 sm:px-6 py-3 sm:py-4 hidden md:table-cell">
                         {order.region ? (
                           <span className="inline-flex items-center gap-1 text-sm text-[#86868b] dark:text-[#98989d]">
                             <MapPin className="w-3.5 h-3.5" />
@@ -186,7 +189,7 @@ const OrdersPage = () => {
                           <span className="text-sm text-[#aeaeb2]">—</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleEdit(order)}

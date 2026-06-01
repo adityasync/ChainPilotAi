@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Check, Moon, Sun } from 'lucide-react';
 import { settingsAPI } from '../services/apiService';
+import { Bar as SkeletonBar } from '../components/Skeleton';
 
 const SettingsPage = () => {
   const { user, logout, refreshUser } = useAuth();
@@ -57,8 +58,25 @@ const SettingsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-900 dark:border-gray-600 dark:border-t-white rounded-full animate-spin" />
+      <div className="py-8 max-w-2xl space-y-8">
+        <div className="space-y-2">
+          <SkeletonBar className="w-48 h-8" />
+          <SkeletonBar className="w-64 h-4" />
+        </div>
+        <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 space-y-5">
+          <SkeletonBar className="w-32 h-5" />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <SkeletonBar className="w-20 h-3" />
+              <SkeletonBar className="w-full h-10 rounded-xl" />
+            </div>
+          ))}
+          <SkeletonBar className="w-28 h-10 rounded-lg" />
+        </div>
+        <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 space-y-4">
+          <SkeletonBar className="w-36 h-5" />
+          <SkeletonBar className="w-full h-10 rounded-xl" />
+        </div>
       </div>
     );
   }

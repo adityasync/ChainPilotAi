@@ -145,17 +145,8 @@ class EnhancedInsightEngine:
             is_duplicate = False
 
             for existing_insight in existing_insights:
-                existing_details = {}
-                if existing_insight.prediction_details:
-                    try:
-                        existing_details = json.loads(existing_insight.prediction_details)
-                    except:
-                        pass
-
-                existing_entity_id = existing_details.get('entity_id')
-
                 if (existing_insight.category == new_insight['category'] and
-                    str(existing_entity_id) == str(new_insight['entity_id']) and
+                    str(existing_insight.entity_id) == str(new_insight['entity_id']) and
                     existing_insight.title == new_insight['title']):
 
                     time_diff = datetime.utcnow() - existing_insight.created_at.replace(tzinfo=None)
@@ -283,6 +274,8 @@ class EnhancedInsightEngine:
                 urgency_level=insight_data['urgency_level'],
                 priority_score=insight_data['priority_score'],
                 status=insight_data['status'],
+                entity_type=insight_data.get('entity_type'),
+                entity_id=insight_data.get('entity_id'),
                 prediction_details=insight_data['prediction_details'],
             )
             db.add(insight)

@@ -3,6 +3,7 @@ import { Plus, ArrowRight, X, Sparkles, Trash2, Brain, Truck } from 'lucide-reac
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { supplierAPI, aiAPI, mlAPI } from '../services/apiService';
+import { CardGridSkeleton, SectionTitleSkeleton } from '../components/Skeleton';
 
 interface SupplierCardData {
   id: number;
@@ -169,8 +170,9 @@ const SupplierPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin" />
+      <div className="py-8 space-y-8">
+        <SectionTitleSkeleton />
+        <CardGridSkeleton count={6} />
       </div>
     );
   }
@@ -220,7 +222,22 @@ const SupplierPage = () => {
           ))}
         </div>
 
-        <SupplierDetailPanel
+        {/* Desktop: inline detail panel */}
+        <div className="hidden xl:block">
+          <SupplierDetailPanel
+            supplier={selectedSupplier}
+            loading={detailLoading}
+            onClose={() => setSelectedSupplierId(null)}
+            mlDelayRisk={mlDelayRisk}
+            mlDelayRiskLoading={mlDelayRiskLoading}
+            onAddShipment={() => setShowShipmentModal(true)}
+          />
+        </div>
+      </div>
+
+      {/* Mobile: drawer overlay */}
+      {selectedSupplierId && (
+        <MobileSupplierDrawer
           supplier={selectedSupplier}
           loading={detailLoading}
           onClose={() => setSelectedSupplierId(null)}
@@ -228,7 +245,7 @@ const SupplierPage = () => {
           mlDelayRiskLoading={mlDelayRiskLoading}
           onAddShipment={() => setShowShipmentModal(true)}
         />
-      </div>
+      )}
 
       {/* Pagination */}
       {total > pageSize && (
@@ -323,11 +340,11 @@ const SupplierCard = ({ supplier, isSelected, onClick, onDelete }: SupplierCardP
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onDelete(supplier.id, supplier.supplier_name); }}
-            className="p-1.5 rounded-lg text-[#86868b] dark:text-[#98989d] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
+            className="p-1.5 rounded-lg text-[#86868b] dark:text-[#98989d] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
-          <ArrowRight className="w-5 h-5 text-[#86868b] dark:text-[#98989d] opacity-0 group-hover:opacity-100 transition-opacity" />
+          <ArrowRight className="w-5 h-5 text-[#86868b] dark:text-[#98989d] opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
         </div>
       </div>
 
@@ -519,6 +536,145 @@ const SupplierDetailPanel = ({ supplier, loading, onClose, mlDelayRisk, mlDelayR
         ) : null}
       </div>
     </aside>
+  );
+};
+
+/* ─── Mobile Supplier Drawer ─── */
+
+const MobileSupplierDrawer = ({ supplier, loading, onClose, mlDelayRisk, mlDelayRiskLoading, onAddShipment }: SupplierDetailPanelProps) => {
+  const [narrative, setNarrative] = useState<{ narrative: string; cached: boolean } | null>(null);
+  const [narrativeLoading, setNarrativeLoading] = useState(false);
+  const [narrativeError, setNarrativeError] = useState('');
+
+  useEffect(() => {
+    if (!supplier) { setNarrative(null); return; }
+    setNarrativeLoading(true);
+    setNarrativeError('');
+    setNarrative(null);
+    aiAPI.getSupplierNarrative(supplier.id)
+      .then((res) => setNarrative(res.data.data || res.data))
+      .catch((err) => {
+        const detail = err.response?.data?.error?.message || err.response?.data?.detail || err.message;
+        setNarrativeError(detail || 'Unable to load AI assessment.');
+      })
+      .finally(() => setNarrativeLoading(false));
+  }, [supplier?.id]);
+
+  if (!supplier && !loading) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 xl:hidden" onClick={onClose} />
+
+      {/* Drawer */}
+      <aside className="fixed top-0 right-0 h-full w-full max-w-[420px] bg-white dark:bg-[#1c1c1e] z-50 shadow-2xl overflow-y-auto transform translate-x-0 transition-transform duration-300 ease-out xl:hidden">
+        <div className="p-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-[#86868b] dark:text-[#98989d] mb-1">Supplier detail</p>
+              <h2 className="text-2xl font-semibold text-[#1d1d1f] dark:text-white tracking-tight">
+                {loading ? 'Loading...' : supplier?.supplier_name}
+              </h2>
+            </div>
+            <button type="button" onClick={onClose}
+              className="p-2 rounded-lg text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2c2c2e] transition-all">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin" />
+            </div>
+          ) : supplier ? (
+            <>
+              {/* Metrics */}
+              <div className="grid grid-cols-2 gap-3">
+                <DetailMetric label="Reliability" value={`${Math.round((supplier.reliability_score ?? 0) * 100)}%`} />
+                <DetailMetric label="Lead time" value={`${supplier.avg_lead_time ?? 0}d`} />
+                <DetailMetric label="Shipments" value={`${supplier.shipments.length}`} />
+                <div className="rounded-xl bg-[#f5f5f7] dark:bg-[#2c2c2e] px-4 py-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Brain className="w-3.5 h-3.5 text-[#0071e3] dark:text-blue-400" />
+                    <p className="text-xs text-[#86868b] dark:text-[#98989d]">ML Delay Risk</p>
+                  </div>
+                  {mlDelayRiskLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-gray-200 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin" />
+                      <span className="text-xs text-[#86868b] dark:text-[#98989d]">Analyzing...</span>
+                    </div>
+                  ) : mlDelayRisk ? (
+                    <div>
+                      <p className={`text-lg font-semibold ${mlDelayRisk.delay_risk ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        {Math.round(mlDelayRisk.delay_probability * 100)}%
+                      </p>
+                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        mlDelayRisk.delay_risk ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                      }`}>
+                        {mlDelayRisk.delay_risk ? 'High Risk' : 'Low Risk'}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#86868b] dark:text-[#98989d]">Run ML Analysis to see risk.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Shipments */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-medium text-[#1d1d1f] dark:text-white">Recent shipments</h3>
+                  <button onClick={onAddShipment}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0071e3] text-white rounded-lg text-xs font-medium hover:bg-[#0077ed] transition-all">
+                    <Truck className="w-3.5 h-3.5" /> Add Shipment
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {supplier.shipments.length > 0 ? supplier.shipments.map((shipment) => (
+                    <div key={shipment.id} className="rounded-xl bg-[#f5f5f7] dark:bg-[#2c2c2e] px-4 py-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-medium text-[#1d1d1f] dark:text-white">
+                          Expected {formatDate(shipment.expected_delivery_date)}
+                        </p>
+                        <p className="text-sm text-[#86868b] dark:text-[#98989d]">${shipment.shipping_cost.toFixed(2)}</p>
+                      </div>
+                      <p className="text-sm text-[#86868b] dark:text-[#98989d]">
+                        {shipment.actual_delivery_date ? `Delivered ${formatDate(shipment.actual_delivery_date)}` : 'Awaiting delivery confirmation'}
+                      </p>
+                    </div>
+                  )) : (
+                    <p className="text-sm text-[#86868b] dark:text-[#98989d]">No shipment history yet.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* AI Narrative */}
+              <div className="pt-6 border-t border-gray-100 dark:border-[#38383a]">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-4 h-4 text-[#0071e3] dark:text-blue-400" />
+                  <h3 className="text-base font-medium text-[#1d1d1f] dark:text-white">AI Risk Assessment</h3>
+                  {narrative?.cached && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#f5f5f7] dark:bg-[#2c2c2e] text-[#86868b] dark:text-[#98989d]">Cached</span>
+                  )}
+                </div>
+                {narrativeLoading ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-gray-200 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin" />
+                    <p className="text-sm text-[#86868b] dark:text-[#98989d]">Generating risk assessment...</p>
+                  </div>
+                ) : narrativeError ? (
+                  <p className="text-sm text-[#b42318] dark:text-red-400">{narrativeError}</p>
+                ) : narrative ? (
+                  <NarrativeDisplay text={narrative.narrative} />
+                ) : null}
+              </div>
+            </>
+          ) : null}
+        </div>
+      </aside>
+    </>
   );
 };
 

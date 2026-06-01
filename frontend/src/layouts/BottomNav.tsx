@@ -6,7 +6,6 @@ import {
   Truck,
   Lightbulb,
   Upload,
-  Settings,
   ShoppingCart,
 } from 'lucide-react';
 
@@ -18,7 +17,6 @@ const navItems = [
   { to: '/suppliers', icon: Truck, label: 'Suppliers' },
   { to: '/insights', icon: Lightbulb, label: 'Insights' },
   { to: '/upload-data', icon: Upload, label: 'Upload' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 const BottomNav = () => {

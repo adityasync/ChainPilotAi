@@ -3,6 +3,7 @@ import { ArrowRight, Check, CircleDashed, Sparkles, AlertTriangle, TrendingUp, P
 import { mlAPI, aiAPI } from '../services/apiService';
 import { usePagination } from '../hooks/usePagination';
 import PaginationControls from '../components/PaginationControls';
+import { InsightCardSkeleton, SectionTitleSkeleton, Bar as SkeletonBar } from '../components/Skeleton';
 
 interface Insight {
   id: number;
@@ -164,8 +165,27 @@ const InsightsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin" />
+      <div className="py-8 space-y-8">
+        <SectionTitleSkeleton />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 space-y-3">
+              <SkeletonBar className="w-10 h-10 rounded-xl" />
+              <SkeletonBar className="w-16 h-7" />
+              <SkeletonBar className="w-24 h-3" />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonBar key={i} className="w-20 h-8 rounded-full" />
+          ))}
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <InsightCardSkeleton key={i} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -195,11 +215,11 @@ const InsightsPage = () => {
             )}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           <button
             onClick={handleRunAnalysis}
             disabled={runningAnalysis}
-            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] rounded-lg text-sm font-medium hover:bg-black dark:hover:bg-gray-200 transition-all disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-[#1d1d1f] dark:bg-white text-white dark:text-[#1d1d1f] rounded-lg text-sm font-medium hover:bg-black dark:hover:bg-gray-200 transition-all disabled:opacity-60"
           >
             {runningAnalysis ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
             {runningAnalysis ? 'Running...' : 'Run ML Analysis'}
@@ -207,7 +227,7 @@ const InsightsPage = () => {
           <button
             onClick={handleGenerateInsights}
             disabled={generating}
-            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-[#0071e3] text-white rounded-lg text-sm font-medium hover:bg-[#0077ed] transition-all disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-[#0071e3] text-white rounded-lg text-sm font-medium hover:bg-[#0077ed] transition-all disabled:opacity-60"
           >
             <Sparkles className="w-4 h-4" />
             {generating ? 'Generating...' : 'Generate AI Insights'}
@@ -377,10 +397,10 @@ const InsightsPage = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-[#38383a]">
-                      <th className="text-left px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Type</th>
-                      <th className="text-left px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Entity</th>
-                      <th className="text-left px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Value</th>
-                      <th className="text-left px-6 py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Date</th>
+                      <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Type</th>
+                      <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Entity</th>
+                      <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider">Value</th>
+                      <th className="text-left px-4 sm:px-6 py-3 sm:py-4 text-xs font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider hidden sm:table-cell">Date</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -463,7 +483,7 @@ const InsightCard = ({ insight, loading, onAcknowledge, onResolve }: InsightCard
       </div>
 
       {expanded && (
-        <div className="px-5 pb-4 pt-0 ml-14 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 pb-4 pt-0 ml-4 sm:ml-14 space-y-3" onClick={(e) => e.stopPropagation()}>
           {insight.explanation && (
             <div className="bg-gray-50 dark:bg-[#2c2c2e] rounded-lg p-3">
               <p className="text-xs font-medium text-[#86868b] dark:text-[#98989d] mb-1">Why this matters</p>
@@ -522,18 +542,18 @@ const PREDICTION_TYPE_COLORS: Record<string, string> = {
 
 const PredictionRow = ({ prediction }: { prediction: Prediction }) => (
   <tr className="border-b border-gray-50 dark:border-[#2c2c2e] hover:bg-[#fafafa] dark:hover:bg-[#2c2c2e]/50 transition-colors">
-    <td className="px-6 py-4">
-      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${PREDICTION_TYPE_COLORS[prediction.prediction_type] || 'bg-gray-100 dark:bg-[#2c2c2e] text-[#86868b]'}`}>
+    <td className="px-4 sm:px-6 py-3 sm:py-4">
+      <span className={`inline-block px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${PREDICTION_TYPE_COLORS[prediction.prediction_type] || 'bg-gray-100 dark:bg-[#2c2c2e] text-[#86868b]'}`}>
         {PREDICTION_TYPE_LABELS[prediction.prediction_type] || prediction.prediction_type}
       </span>
     </td>
-    <td className="px-6 py-4 text-sm text-[#1d1d1f] dark:text-white capitalize">
+    <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-[#1d1d1f] dark:text-white capitalize">
       {prediction.entity_type} #{prediction.entity_id}
     </td>
-    <td className="px-6 py-4 text-sm font-medium text-[#1d1d1f] dark:text-white">
+    <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium text-[#1d1d1f] dark:text-white">
       {typeof prediction.prediction_value === 'number' ? prediction.prediction_value.toFixed(2) : prediction.prediction_value}
     </td>
-    <td className="px-6 py-4 text-sm text-[#86868b] dark:text-[#98989d]">
+    <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-[#86868b] dark:text-[#98989d] hidden sm:table-cell">
       {new Date(prediction.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
     </td>
   </tr>

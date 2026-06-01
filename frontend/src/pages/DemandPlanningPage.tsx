@@ -9,6 +9,7 @@ import {
   TrendingUp, Package, ShoppingCart, ArrowUpRight, ArrowDownRight,
   ArrowLeft, BarChart3, Target, ChevronRight, Brain, Loader2,
 } from 'lucide-react';
+import { KPIGridSkeleton, ChartSkeleton, TableSkeleton, SectionTitleSkeleton } from '../components/Skeleton';
 
 interface HistoryPoint {
   label: string;
@@ -100,7 +101,21 @@ interface ProductSummary {
   recommendation: { suggested_reorder_quantity: number; urgency: string; message: string };
 }
 
+const useIsMobile = (breakpoint = 640) => {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+};
+
 const DemandPlanningPage = () => {
+  const isMobile = useIsMobile();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter'>('month');
   const [products, setProducts] = useState<Array<{ id: number; product_name: string }>>([]);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
@@ -223,8 +238,12 @@ const DemandPlanningPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin" />
+      <div className="py-8 space-y-8">
+        <SectionTitleSkeleton />
+        <KPIGridSkeleton count={4} />
+        <ChartSkeleton height="h-72" />
+        <ChartSkeleton />
+        <TableSkeleton rows={6} cols={5} />
       </div>
     );
   }
@@ -271,6 +290,7 @@ const DemandPlanningPage = () => {
         mlForecast={mlForecast}
         mlForecastLoading={mlForecastLoading}
         onRefreshForecast={handleRefreshForecast}
+        isMobile={isMobile}
       />
     );
   }
@@ -351,19 +371,29 @@ const DemandPlanningPage = () => {
             </div>
             <TrendingUp className="w-5 h-5 text-[#0071e3]" />
           </div>
-          <div className="h-72">
+          <div className={isMobile ? 'h-56' : 'h-72'}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={portfolio.top_products} layout="vertical" margin={{ left: 20 }}>
+              <BarChart
+                data={portfolio.top_products.map(p => ({
+                  ...p,
+                  short_name: p.product_name.length > 15 ? p.product_name.slice(0, 15) + '…' : p.product_name,
+                }))}
+                layout="vertical"
+                margin={{ left: isMobile ? 0 : 20, right: 20, top: 5, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis type="number" tick={{ fill: '#86868b', fontSize: 11 }} />
+                <XAxis type="number" tick={{ fill: '#86868b', fontSize: isMobile ? 10 : 11 }} />
                 <YAxis
                   type="category"
-                  dataKey="product_name"
-                  tick={{ fill: '#86868b', fontSize: 11 }}
-                  width={120}
+                  dataKey="short_name"
+                  tick={{ fill: '#86868b', fontSize: isMobile ? 10 : 11 }}
+                  width={isMobile ? 80 : 120}
                 />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}
+                  contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 13, backgroundColor: '#fff', color: '#1d1d1f', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                  labelStyle={{ color: '#1d1d1f', fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: '#1d1d1f' }}
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.product_name ?? ''}
                   formatter={(value: number) => [`${value} units`, 'Demand']}
                 />
                 <Bar dataKey="total_quantity" fill="#0071e3" radius={[0, 4, 4, 0]} />
@@ -383,9 +413,9 @@ const DemandPlanningPage = () => {
             </div>
             <TrendingUp className="w-5 h-5 text-[#0071e3]" />
           </div>
-          <div className="h-64">
+          <div className={isMobile ? 'h-48' : 'h-64'}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={portfolio.demand_series}>
+              <AreaChart data={portfolio.demand_series} margin={{ top: 5, right: 10, left: isMobile ? -10 : 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="portfolioGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#0071e3" stopOpacity={0.15} />
@@ -393,10 +423,12 @@ const DemandPlanningPage = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="label" tick={{ fill: '#86868b', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#86868b', fontSize: 11 }} />
+                <XAxis dataKey="label" tick={{ fill: '#86868b', fontSize: isMobile ? 10 : 11 }} angle={isMobile ? -45 : 0} textAnchor={isMobile ? 'end' : 'middle'} height={isMobile ? 40 : 30} />
+                <YAxis tick={{ fill: '#86868b', fontSize: isMobile ? 10 : 11 }} width={isMobile ? 35 : 40} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}
+                  contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 13, backgroundColor: '#fff', color: '#1d1d1f', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                  labelStyle={{ color: '#1d1d1f', fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: '#1d1d1f' }}
                   formatter={(value: number) => [`${value} units`, 'Demand']}
                 />
                 <Area type="monotone" dataKey="quantity" stroke="#0071e3" strokeWidth={2} fill="url(#portfolioGradient)" />
@@ -507,7 +539,7 @@ const DemandPlanningPage = () => {
 // Product Detail View Component
 const ProductDetailView = ({
   summary, historySeries, accuracy, insights, selectedPeriod, periods, onPeriodChange, onBack, error,
-  mlForecast, mlForecastLoading, onRefreshForecast,
+  mlForecast, mlForecastLoading, onRefreshForecast, isMobile,
 }: {
   summary: ProductSummary;
   historySeries: HistoryPoint[];
@@ -521,6 +553,7 @@ const ProductDetailView = ({
   mlForecast: { predicted_demand: number; forecast_date: string } | null;
   mlForecastLoading: boolean;
   onRefreshForecast: () => void;
+  isMobile: boolean;
 }) => {
   // Build forecast chart data with confidence band
   const multiStep = summary.forecast.multi_step_forecast || [];
@@ -585,21 +618,21 @@ const ProductDetailView = ({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <button
               onClick={onRefreshForecast}
               disabled={mlForecastLoading}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0071e3] text-white rounded-lg text-sm font-medium hover:bg-[#0077ed] transition-all disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0071e3] text-white rounded-lg text-sm font-medium hover:bg-[#0077ed] transition-all disabled:opacity-60 w-full sm:w-auto justify-center"
             >
               {mlForecastLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
               {mlForecastLoading ? 'Forecasting...' : 'Refresh ML Forecast'}
             </button>
-            <div className="flex gap-1.5 bg-gray-100 dark:bg-[#2c2c2e] rounded-lg p-1">
+            <div className="flex gap-1 bg-gray-100 dark:bg-[#2c2c2e] rounded-lg p-0.5">
               {periods.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => onPeriodChange(p.id)}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
                     selectedPeriod === p.id
                       ? 'bg-white dark:bg-[#3a3a3c] text-[#1d1d1f] dark:text-white shadow-sm'
                       : 'text-[#86868b] dark:text-[#98989d] hover:text-[#1d1d1f] dark:hover:text-white'
@@ -678,9 +711,9 @@ const ProductDetailView = ({
           </div>
           <TrendingUp className="w-5 h-5 text-[#0071e3]" />
         </div>
-        <div className="h-80">
+        <div className={isMobile ? 'h-56' : 'h-80'}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={forecastChart}>
+            <ComposedChart data={forecastChart} margin={{ top: 5, right: 10, left: isMobile ? -10 : 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="forecastBand" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#0071e3" stopOpacity={0.1} />
@@ -688,10 +721,12 @@ const ProductDetailView = ({
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="label" tick={{ fill: '#86868b', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#86868b', fontSize: 11 }} />
+              <XAxis dataKey="label" tick={{ fill: '#86868b', fontSize: isMobile ? 10 : 11 }} angle={isMobile ? -45 : 0} textAnchor={isMobile ? 'end' : 'middle'} height={isMobile ? 40 : 30} />
+              <YAxis tick={{ fill: '#86868b', fontSize: isMobile ? 10 : 11 }} width={isMobile ? 35 : 40} />
               <Tooltip
-                contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}
+                contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 13, backgroundColor: '#fff', color: '#1d1d1f', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                labelStyle={{ color: '#1d1d1f', fontWeight: 600, marginBottom: 4 }}
+                itemStyle={{ color: '#1d1d1f' }}
                 formatter={(value: number, name: string) => {
                   const labels: Record<string, string> = {
                     actual: 'Actual Demand',
@@ -702,15 +737,17 @@ const ProductDetailView = ({
                   return [`${value} units`, labels[name] || name];
                 }}
               />
-              <Legend
-                formatter={(value: string) => {
-                  const labels: Record<string, string> = {
-                    actual: 'Actual Demand',
-                    forecast: 'Forecast',
-                  };
-                  return labels[value] || value;
-                }}
-              />
+              {!isMobile && (
+                <Legend
+                  formatter={(value: string) => {
+                    const labels: Record<string, string> = {
+                      actual: 'Actual Demand',
+                      forecast: 'Forecast',
+                    };
+                    return labels[value] || value;
+                  }}
+                />
+              )}
               {/* Confidence band */}
               <Area type="monotone" dataKey="forecastUpper" stroke="none" fill="url(#forecastBand)" legendType="none" connectNulls />
               <Area type="monotone" dataKey="forecastLower" stroke="none" fill="url(#forecastBand)" legendType="none" connectNulls />
@@ -742,25 +779,29 @@ const ProductDetailView = ({
             </div>
             <Target className="w-5 h-5 text-[#0071e3]" />
           </div>
-          <div className="h-64">
+          <div className={isMobile ? 'h-48' : 'h-64'}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={accuracy.accuracy_data}>
+              <BarChart data={accuracy.accuracy_data} margin={{ top: 5, right: 10, left: isMobile ? -10 : 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="label" tick={{ fill: '#86868b', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#86868b', fontSize: 11 }} />
+                <XAxis dataKey="label" tick={{ fill: '#86868b', fontSize: isMobile ? 10 : 11 }} angle={isMobile ? -45 : 0} textAnchor={isMobile ? 'end' : 'middle'} height={isMobile ? 40 : 30} />
+                <YAxis tick={{ fill: '#86868b', fontSize: isMobile ? 10 : 11 }} width={isMobile ? 35 : 40} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}
+                  contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 13, backgroundColor: '#fff', color: '#1d1d1f', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                  labelStyle={{ color: '#1d1d1f', fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: '#1d1d1f' }}
                   formatter={(value: number, name: string) => {
                     const labels: Record<string, string> = { predicted: 'Predicted', actual: 'Actual' };
                     return [`${value} units`, labels[name] || name];
                   }}
                 />
-                <Legend
-                  formatter={(value: string) => {
-                    const labels: Record<string, string> = { predicted: 'Predicted', actual: 'Actual' };
-                    return labels[value] || value;
-                  }}
-                />
+                {!isMobile && (
+                  <Legend
+                    formatter={(value: string) => {
+                      const labels: Record<string, string> = { predicted: 'Predicted', actual: 'Actual' };
+                      return labels[value] || value;
+                    }}
+                  />
+                )}
                 <Bar dataKey="actual" fill="#86868b" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="predicted" fill="#0071e3" radius={[4, 4, 0, 0]} />
               </BarChart>

@@ -11,6 +11,7 @@ import {
   CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import AskAI from '../components/AskAI';
+import { KPIGridSkeleton, ChartSkeleton, PieSkeleton, TableSkeleton, SectionTitleSkeleton } from '../components/Skeleton';
 
 interface Insight {
   id: number;
@@ -65,7 +66,21 @@ const RISK_LABELS: Record<string, string> = {
   overstock: 'Overstock',
 };
 
+const useIsMobile = (breakpoint = 640) => {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+};
+
 const DashboardPage = () => {
+  const isMobile = useIsMobile();
   const [kpis, setKpis] = useState({
     total_products: 0,
     inventory_health: 0,
@@ -129,8 +144,14 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin" />
+      <div className="py-8 space-y-8">
+        <SectionTitleSkeleton />
+        <KPIGridSkeleton count={4} />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <ChartSkeleton />
+          <PieSkeleton />
+        </div>
+        <TableSkeleton rows={5} cols={5} />
       </div>
     );
   }
@@ -225,9 +246,9 @@ const DashboardPage = () => {
             <TrendingUp className="w-5 h-5 text-[#0071e3]" />
           </div>
           {demandTrend.length > 0 ? (
-            <div className="h-64">
+            <div className={isMobile ? 'h-48' : 'h-64'}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={demandTrend}>
+                <AreaChart data={demandTrend} margin={{ top: 5, right: 10, left: isMobile ? -10 : 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="demandGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#0071e3" stopOpacity={0.15} />
@@ -235,10 +256,12 @@ const DashboardPage = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="label" tick={{ fill: '#86868b', fontSize: 11 }} />
-                  <YAxis tick={{ fill: '#86868b', fontSize: 11 }} />
+                  <XAxis dataKey="label" tick={{ fill: '#86868b', fontSize: isMobile ? 10 : 11 }} angle={isMobile ? -45 : 0} textAnchor={isMobile ? 'end' : 'middle'} height={isMobile ? 40 : 30} />
+                  <YAxis tick={{ fill: '#86868b', fontSize: isMobile ? 10 : 11 }} width={isMobile ? 35 : 40} />
                   <Tooltip
-                    contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}
+                    contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 13, backgroundColor: '#fff', color: '#1d1d1f', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                    labelStyle={{ color: '#1d1d1f', fontWeight: 600, marginBottom: 4 }}
+                    itemStyle={{ color: '#1d1d1f' }}
                     formatter={(value: number) => [`${value} units`, 'Demand']}
                   />
                   <Area
@@ -268,16 +291,16 @@ const DashboardPage = () => {
             <Package className="w-5 h-5 text-[#0071e3]" />
           </div>
           {pieData.length > 0 ? (
-            <div className="h-64 flex items-center">
-              <div className="w-1/2 h-full">
+            <div className={`flex ${isMobile ? 'flex-col items-center' : 'items-center'} ${isMobile ? 'h-auto' : 'h-64'}`}>
+              <div className={isMobile ? 'w-full h-48' : 'w-1/2 h-full'}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={pieData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
+                      innerRadius={isMobile ? 40 : 55}
+                      outerRadius={isMobile ? 65 : 85}
                       paddingAngle={3}
                       dataKey="value"
                     >
@@ -286,13 +309,15 @@ const DashboardPage = () => {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}
+                      contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 13, backgroundColor: '#fff', color: '#1d1d1f', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                      labelStyle={{ color: '#1d1d1f', fontWeight: 600, marginBottom: 4 }}
+                      itemStyle={{ color: '#1d1d1f' }}
                       formatter={(value: number, name: string) => [`${value} products`, name]}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="w-1/2 space-y-3 pl-4">
+              <div className={isMobile ? 'w-full grid grid-cols-2 gap-2 mt-2' : 'w-1/2 space-y-3 pl-4'}>
                 {pieData.map((entry) => (
                   <div key={entry.name} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
