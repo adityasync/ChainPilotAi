@@ -32,8 +32,11 @@ interface PortfolioData {
   products_tracked: number;
   demand_series: Array<{ label: string; quantity: number }>;
   top_products: PortfolioProduct[];
-  forecast_accuracy?: { mape: number | null; bias: number | null; products_with_data: number };
-  demand_patterns?: Record<string, number>;
+}
+
+interface PortfolioInsights {
+  forecast_accuracy: { mape: number | null; bias: number | null; products_with_data: number };
+  demand_patterns: Record<string, number>;
 }
 
 interface AccuracyPoint {
@@ -106,6 +109,8 @@ const DemandPlanningPage = () => {
 
   // Portfolio state
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
+  const [portfolioInsights, setPortfolioInsights] = useState<PortfolioInsights | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
   // Product detail state
   const [historySeries, setHistorySeries] = useState<HistoryPoint[]>([]);
@@ -140,19 +145,38 @@ const DemandPlanningPage = () => {
   // Fetch portfolio data when no product is selected
   useEffect(() => {
     if (selectedProductId !== null) return;
+    let cancelled = false;
+
     const fetchPortfolio = async () => {
       setLoading(true);
       setError('');
+      setPortfolioInsights(null);
       try {
+        // Step 1: Fetch basic portfolio data (fast — no ML)
         const res = await demandAPI.getPortfolioSummary(selectedPeriod);
+        if (cancelled) return;
         setPortfolio(res.data);
-      } catch {
-        setError('Unable to load demand data.');
-      } finally {
         setLoading(false);
+
+        // Step 2: Fetch ML-heavy insights in the background (slow)
+        setInsightsLoading(true);
+        try {
+          const insightsRes = await demandAPI.getPortfolioInsights();
+          if (!cancelled) setPortfolioInsights(insightsRes.data);
+        } catch {
+          // Insights are optional — page works without them
+        } finally {
+          if (!cancelled) setInsightsLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setError('Unable to load demand data.');
+          setLoading(false);
+        }
       }
     };
     fetchPortfolio();
+    return () => { cancelled = true; };
   }, [selectedPeriod, selectedProductId]);
 
   // Fetch product detail when a product is selected
@@ -302,10 +326,10 @@ const DemandPlanningPage = () => {
         <StatBlock
           icon={<Target className="w-4 h-4" />}
           label="Forecast Accuracy"
-          value={portfolio?.forecast_accuracy?.mape != null ? `${portfolio.forecast_accuracy.mape}% MAPE` : '—'}
-          sub={portfolio?.forecast_accuracy?.mape != null ? `Across ${portfolio.forecast_accuracy.products_with_data} products` : 'Need 4+ months of data'}
-          color={portfolio?.forecast_accuracy?.mape != null && portfolio.forecast_accuracy.mape < 25 ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#86868b] dark:text-[#98989d]'}
-          bg={portfolio?.forecast_accuracy?.mape != null && portfolio.forecast_accuracy.mape < 25 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-gray-100 dark:bg-[#2c2c2e]'}
+          value={portfolioInsights?.forecast_accuracy?.mape != null ? `${portfolioInsights.forecast_accuracy.mape}% MAPE` : '—'}
+          sub={portfolioInsights?.forecast_accuracy?.mape != null ? `Across ${portfolioInsights.forecast_accuracy.products_with_data} products` : insightsLoading ? 'Computing...' : 'Need 4+ months of data'}
+          color={portfolioInsights?.forecast_accuracy?.mape != null && portfolioInsights.forecast_accuracy.mape < 25 ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#86868b] dark:text-[#98989d]'}
+          bg={portfolioInsights?.forecast_accuracy?.mape != null && portfolioInsights.forecast_accuracy.mape < 25 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-gray-100 dark:bg-[#2c2c2e]'}
         />
         <StatBlock
           icon={<Package className="w-4 h-4" />}
@@ -383,7 +407,21 @@ const DemandPlanningPage = () => {
       )}
 
       {/* Demand Pattern Distribution */}
-      {portfolio?.demand_patterns && Object.keys(portfolio.demand_patterns).length > 0 && (
+      {insightsLoading && !portfolioInsights && (
+        <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-[#1d1d1f] dark:text-white">Demand Patterns</h2>
+              <p className="text-sm text-[#86868b] dark:text-[#98989d]">ML classification across products</p>
+            </div>
+            <Loader2 className="w-5 h-5 text-[#0071e3] animate-spin" />
+          </div>
+          <div className="py-4 text-center">
+            <p className="text-sm text-[#86868b] dark:text-[#98989d]">Computing demand patterns...</p>
+          </div>
+        </div>
+      )}
+      {portfolioInsights?.demand_patterns && Object.keys(portfolioInsights.demand_patterns).length > 0 && (
         <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -393,7 +431,7 @@ const DemandPlanningPage = () => {
             <TrendingUp className="w-5 h-5 text-[#0071e3]" />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-            {Object.entries(portfolio.demand_patterns).map(([pattern, count]) => (
+            {Object.entries(portfolioInsights.demand_patterns).map(([pattern, count]) => (
               <div key={pattern} className={`rounded-xl p-3 text-center ${
                 pattern === 'stable' ? 'bg-emerald-50 dark:bg-emerald-900/20' :
                 pattern === 'trending_up' ? 'bg-blue-50 dark:bg-blue-900/20' :

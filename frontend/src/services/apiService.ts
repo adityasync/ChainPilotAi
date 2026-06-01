@@ -203,6 +203,9 @@ export const demandAPI = {
   getPortfolioSummary: (period: 'week' | 'month' | 'quarter') =>
     apiClient.get('/demand/portfolio/summary', { params: { period } }),
 
+  getPortfolioInsights: () =>
+    apiClient.get('/demand/portfolio/insights', { timeout: 120000 }),
+
   getForecastAccuracy: (productId: number) =>
     apiClient.get(`/demand/${productId}/accuracy`),
 

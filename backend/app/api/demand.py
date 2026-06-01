@@ -12,6 +12,7 @@ from ..services.demand_service import (
     get_demand_summary,
     get_forecast_accuracy,
     get_portfolio_demand_summary,
+    get_portfolio_insights,
 )
 
 router = APIRouter()
@@ -25,6 +26,17 @@ async def get_portfolio_summary(
 ):
     company_id = await get_current_user_company_id(db, current_user)
     return await get_portfolio_demand_summary(db, company_id, period)
+
+
+@router.get("/portfolio/insights")
+async def get_portfolio_insights_endpoint(
+    current_user: str = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Expensive ML-based insights (accuracy + demand patterns). Separate from
+    portfolio summary so the main page loads fast."""
+    company_id = await get_current_user_company_id(db, current_user)
+    return await get_portfolio_insights(db, company_id)
 
 
 @router.get("/{product_id}/history")

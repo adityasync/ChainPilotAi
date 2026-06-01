@@ -22,8 +22,25 @@ from ..models.supplier_shipment import Supplier
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-predictor = MLPredictor()
-insight_engine = EnhancedInsightEngine(predictor)
+# Lazy singleton — models load on first request, not at import time.
+# This avoids loading 4 .pkl files (including a 55 MB demand model) during
+# app startup, which on Render free tier can cause OOM or slow cold starts.
+_predictor = None
+_insight_engine = None
+
+
+def _get_predictor() -> MLPredictor:
+    global _predictor
+    if _predictor is None:
+        _predictor = MLPredictor()
+    return _predictor
+
+
+def _get_insight_engine() -> EnhancedInsightEngine:
+    global _insight_engine
+    if _insight_engine is None:
+        _insight_engine = EnhancedInsightEngine(_get_predictor())
+    return _insight_engine
 
 
 @router.get("/demand-forecast/{product_id}")
@@ -46,7 +63,7 @@ async def get_demand_forecast(
         raise NotFoundError("Product", product_id)
 
     try:
-        forecast = predictor.predict_demand(str(product_id), forecast_date)
+        forecast = _get_predictor().predict_demand(str(product_id), forecast_date)
         forecast_val = float(forecast)
 
         prediction = Prediction(
@@ -94,7 +111,7 @@ async def get_inventory_risk(
             "Price": product.unit_cost,
         }
 
-        risk_label, probas = predictor.predict_inventory_risk(product_data)
+        risk_label, probas = _get_predictor().predict_inventory_risk(product_data)
         risk_score = float(max(probas))
 
         prediction = Prediction(
@@ -139,7 +156,7 @@ async def get_supplier_delay_risk(
             "Number of products sold": 0,
         }
 
-        delay_prediction, delay_probability = predictor.predict_supplier_delay(supplier_data)
+        delay_prediction, delay_probability = _get_predictor().predict_supplier_delay(supplier_data)
         delay_prob = float(delay_probability)
 
         prediction = Prediction(
@@ -169,7 +186,7 @@ async def detect_cost_anomaly(
     company_id = await get_current_user_company_id(db, current_user)
 
     try:
-        anomaly_pred, anomaly_score = predictor.detect_cost_anomaly(cost_data)
+        anomaly_pred, anomaly_score = _get_predictor().detect_cost_anomaly(cost_data)
 
         prediction = Prediction(
             company_id=company_id,
@@ -230,7 +247,7 @@ async def run_ml_analysis(
                 "Number of products sold": 0,
             })
 
-        results = await insight_engine.run_enhanced_analysis(
+        results = await _get_insight_engine().run_enhanced_analysis(
             db=db,
             company_id=company_id,
             product_data=product_data,
@@ -260,7 +277,7 @@ async def get_prioritized_insights(
 ):
     company_id = await get_current_user_company_id(db, current_user)
     limit = page * page_size
-    all_insights = await insight_engine.get_prioritized_insights(
+    all_insights = await _get_insight_engine().get_prioritized_insights(
         db=db, company_id=company_id, severity=severity, category=category, status=status, limit=limit,
     )
     total = len(all_insights)
@@ -275,8 +292,8 @@ async def get_action_required_insights(
     db: AsyncSession = Depends(get_db),
 ):
     company_id = await get_current_user_company_id(db, current_user)
-    insights = await insight_engine.get_prioritized_insights(db=db, company_id=company_id, severity="high", limit=20)
-    critical_insights = await insight_engine.get_prioritized_insights(db=db, company_id=company_id, severity="critical", limit=20)
+    insights = await _get_insight_engine().get_prioritized_insights(db=db, company_id=company_id, severity="high", limit=20)
+    critical_insights = await _get_insight_engine().get_prioritized_insights(db=db, company_id=company_id, severity="critical", limit=20)
     all_action_insights = insights + critical_insights
     all_action_insights.sort(key=lambda x: x["priority_score"], reverse=True)
     return all_action_insights[:20]
@@ -290,7 +307,7 @@ async def acknowledge_insight(
 ):
     company_id = await get_current_user_company_id(db, current_user)
     try:
-        await insight_engine.acknowledge_insight(db, insight_id, company_id)
+        await _get_insight_engine().acknowledge_insight(db, insight_id, company_id)
         return {"message": f"Insight {insight_id} acknowledged successfully"}
     except ValueError as e:
         raise NotFoundError("Insight", insight_id)
@@ -307,7 +324,7 @@ async def resolve_insight(
 ):
     company_id = await get_current_user_company_id(db, current_user)
     try:
-        await insight_engine.resolve_insight(db, insight_id, company_id)
+        await _get_insight_engine().resolve_insight(db, insight_id, company_id)
         return {"message": f"Insight {insight_id} resolved successfully"}
     except ValueError as e:
         raise NotFoundError("Insight", insight_id)

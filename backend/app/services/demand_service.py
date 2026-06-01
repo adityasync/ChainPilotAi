@@ -334,8 +334,36 @@ async def get_portfolio_demand_summary(
         .filter(Product.company_id == company_id)
     ) or 0
 
+    return {
+        "period": period,
+        "total_demand": sum(total_buckets.values()),
+        "current_period_quantity": current_qty,
+        "previous_period_quantity": prev_qty,
+        "change_percent": change_percent,
+        "products_tracked": products_tracked,
+        "demand_series": total_series,
+        "top_products": top_products_data,
+    }
+
+
+async def get_portfolio_insights(
+    db: AsyncSession,
+    company_id: int,
+) -> dict[str, Any]:
+    """Compute expensive ML-based portfolio insights (accuracy + demand patterns).
+
+    This is separated from get_portfolio_demand_summary because it involves
+    on-the-fly ML training that can take 10-30+ seconds on constrained hardware.
+    """
+    # Get all product IDs with orders
+    result = await db.execute(
+        select(func.distinct(Order.product_id))
+        .join(Product, Order.product_id == Product.id)
+        .filter(Product.company_id == company_id)
+    )
+    all_product_ids = [row[0] for row in result.all()]
+
     # Compute portfolio-level forecast accuracy (best-effort)
-    all_product_ids = list(product_totals.keys())
     try:
         portfolio_accuracy = await _compute_portfolio_accuracy(db, company_id, all_product_ids)
     except Exception:
@@ -348,14 +376,6 @@ async def get_portfolio_demand_summary(
         demand_patterns = {}
 
     return {
-        "period": period,
-        "total_demand": sum(total_buckets.values()),
-        "current_period_quantity": current_qty,
-        "previous_period_quantity": prev_qty,
-        "change_percent": change_percent,
-        "products_tracked": products_tracked,
-        "demand_series": total_series,
-        "top_products": top_products_data,
         "forecast_accuracy": portfolio_accuracy,
         "demand_patterns": demand_patterns,
     }
