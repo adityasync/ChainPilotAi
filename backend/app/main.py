@@ -5,8 +5,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import RedirectResponse
 from .database import engine, Base
 from .core.config import BACKEND_CORS_ORIGINS, ML_ARTIFACTS_PATH
 from .core.exceptions import AppError
@@ -69,17 +67,12 @@ app.add_middleware(
 
 
 # --- CI-01: HTTP → HTTPS redirect when behind a reverse proxy ---
-class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
-    """Redirect HTTP to HTTPS when X-Forwarded-Proto indicates HTTP."""
-    async def dispatch(self, request: Request, call_next):
-        if request.headers.get("x-forwarded-proto") == "http":
-            url = request.url.replace(scheme="https")
-            return RedirectResponse(url=str(url), status_code=301)
-        return await call_next(request)
-
-
-if os.getenv("FORCE_HTTPS", "false").lower() in ("true", "1", "yes"):
-    app.add_middleware(HTTPSRedirectMiddleware)
+# NOTE: Do NOT use 301 redirects for HTTPS enforcement when behind a reverse
+# proxy (e.g. Render). The proxy terminates TLS and forwards as HTTP, so
+# x-forwarded-proto is "http" even for originally-HTTPS requests. A 301
+# redirect causes the browser to strip the Authorization header (per HTTP
+# spec for cross-scheme redirects), breaking all authenticated API calls.
+# Render already handles TLS at the proxy level, so no redirect is needed.
 
 
 @app.get("/")

@@ -54,5 +54,8 @@ def verify_access_token(token: str, credentials_exception):
         if email is None:
             raise credentials_exception
         return email
+    except jwt.ExpiredSignatureError:
+        from ..core.exceptions import UnauthorizedError
+        raise UnauthorizedError("Token has expired. Please log in again.")
     except JWTError:
         raise credentials_exception
