@@ -146,17 +146,7 @@ const DemandPlanningPage = () => {
       try {
         const res = await demandAPI.getPortfolioSummary(selectedPeriod);
         setPortfolio(res.data);
-      } catch (err: unknown) {
-        // Retry once on 401 (token may still be loading)
-        if ((err as { response?: { status?: number } })?.response?.status === 401) {
-          await new Promise(r => setTimeout(r, 2000));
-          try {
-            const res = await demandAPI.getPortfolioSummary(selectedPeriod);
-            setPortfolio(res.data);
-            setLoading(false);
-            return;
-          } catch { /* fall through */ }
-        }
+      } catch {
         setError('Unable to load demand data.');
       } finally {
         setLoading(false);

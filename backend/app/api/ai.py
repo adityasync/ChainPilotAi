@@ -78,7 +78,7 @@ async def generate_insights(
 
     client = get_ai_client()
     if not client:
-        raise ServiceUnavailableError("AI service not configured. Set AI_API_KEY in .env")
+        raise ServiceUnavailableError("AI service not configured. Set AI_API_KEY in your Render environment variables.")
 
     try:
         context = await build_insights_context(db, company_id)
@@ -90,10 +90,12 @@ async def generate_insights(
         context.get("inventory") or context.get("suppliers") or context.get("predictions")
     )
     if not has_data:
-        return {"data": [], "message": "No inventory, supplier, or prediction data found. Add products and suppliers first, then generate insights."}
+        return {"data": [], "message": "No inventory, supplier, or prediction data found. Upload a CSV dataset first, then generate insights."}
 
     try:
         insights = await generate_ai_insights(client, db, company_id, context)
+    except AppError:
+        raise  # Re-raise AppError (from insight_engine) as-is
     except GLMClientError as e:
         raise AppError(code="AI_SERVICE_ERROR", message=e.detail, status_code=502)
     except Exception as e:

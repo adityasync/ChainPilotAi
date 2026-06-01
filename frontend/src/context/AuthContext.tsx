@@ -19,6 +19,7 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   setUser: (user: User | null) => void;
   isAuthenticated: boolean;
+  isValidating: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +32,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(() => {
     return localStorage.getItem('token');
   });
+
+  const [isValidating, setIsValidating] = useState(() => !!localStorage.getItem('token'));
 
   // Guard against validateToken overwriting state while login() is in flight
   const isLoggingInRef = useRef(false);
@@ -112,7 +115,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Guarded by isLoggingInRef so it never overwrites a fresh login() in progress.
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
-    if (!storedToken) return;
+    if (!storedToken) {
+      setIsValidating(false);
+      return;
+    }
 
     let cancelled = false;
 
@@ -132,6 +138,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+      } finally {
+        if (!cancelled) setIsValidating(false);
       }
     };
 
@@ -158,7 +166,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, refreshUser, setUser, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, refreshUser, setUser, isAuthenticated, isValidating }}>
       {children}
     </AuthContext.Provider>
   );

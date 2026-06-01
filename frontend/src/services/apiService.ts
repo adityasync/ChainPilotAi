@@ -240,7 +240,7 @@ export const aiAPI = {
     apiClient.post('/ai/insights/generate', null, { timeout: 120000 }),
 
   getSupplierNarrative: (supplierId: number) =>
-    apiClient.get(`/ai/suppliers/${supplierId}/narrative`),
+    apiClient.get(`/ai/suppliers/${supplierId}/narrative`, { timeout: 120000 }),
 };
 
 export default apiClient;

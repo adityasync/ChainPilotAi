@@ -374,9 +374,15 @@ const SupplierDetailPanel = ({ supplier, loading, onClose, mlDelayRisk, mlDelayR
     }
     setNarrativeLoading(true);
     setNarrativeError('');
+    setNarrative(null);
     aiAPI.getSupplierNarrative(supplier.id)
       .then((res) => setNarrative(res.data.data || res.data)) // Handle nested data if present
-      .catch(() => setNarrativeError('Unable to load AI assessment.'))
+      .catch((err) => {
+        const detail = err.response?.data?.error?.message
+          || err.response?.data?.detail
+          || err.message;
+        setNarrativeError(detail || 'Unable to load AI assessment.');
+      })
       .finally(() => setNarrativeLoading(false));
   }, [supplier?.id]);
 
