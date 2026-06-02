@@ -35,23 +35,29 @@ const Navbar = () => {
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
           <a
-            href="#features"
+            href="/#features"
             className="text-[12px] text-white/60 hover:text-white transition-colors duration-300"
           >
             Features
           </a>
           <a
-            href="#how-it-works"
+            href="/#how-it-works"
             className="text-[12px] text-white/60 hover:text-white transition-colors duration-300"
           >
             How It Works
           </a>
           <a
-            href="#dashboard"
+            href="/#dashboard"
             className="text-[12px] text-white/60 hover:text-white transition-colors duration-300"
           >
             Dashboard
           </a>
+          <Link
+            to="/pricing"
+            className="text-[12px] text-white/60 hover:text-white transition-colors duration-300"
+          >
+            Pricing
+          </Link>
           {isAuthenticated ? (
             <Link
               to="/dashboard"
@@ -95,26 +101,33 @@ const Navbar = () => {
       >
         <div className="bg-black/90 backdrop-blur-2xl border-t border-white/[0.06] px-6 py-6 space-y-5">
           <a
-            href="#features"
+            href="/#features"
             onClick={() => setMobileOpen(false)}
             className="block text-[15px] text-white/80 hover:text-white transition-colors"
           >
             Features
           </a>
           <a
-            href="#how-it-works"
+            href="/#how-it-works"
             onClick={() => setMobileOpen(false)}
             className="block text-[15px] text-white/80 hover:text-white transition-colors"
           >
             How It Works
           </a>
           <a
-            href="#dashboard"
+            href="/#dashboard"
             onClick={() => setMobileOpen(false)}
             className="block text-[15px] text-white/80 hover:text-white transition-colors"
           >
             Dashboard
           </a>
+          <Link
+            to="/pricing"
+            onClick={() => setMobileOpen(false)}
+            className="block text-[15px] text-white/80 hover:text-white transition-colors"
+          >
+            Pricing
+          </Link>
           {isAuthenticated ? (
             <Link
               to="/dashboard"

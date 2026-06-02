@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Check, Moon, Sun } from 'lucide-react';
+import { Check, Moon, Sun, FileText, Shield, HelpCircle, Mail } from 'lucide-react';
 import { settingsAPI } from '../services/apiService';
 import { Bar as SkeletonBar } from '../components/Skeleton';
+import { version } from '../../package.json';
 
 const SettingsPage = () => {
   const { user, logout, refreshUser } = useAuth();
@@ -184,13 +186,73 @@ const SettingsPage = () => {
         <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 space-y-2">
           <div className="flex justify-between py-2">
             <span className="text-[#86868b] dark:text-[#98989d]">Version</span>
-            <span className="text-[#1d1d1f] dark:text-white font-medium">1.0.0</span>
+            <span className="text-[#1d1d1f] dark:text-white font-medium">{version}</span>
           </div>
           <div className="border-t border-gray-100 dark:border-[#38383a]" />
           <div className="flex justify-between py-2">
             <span className="text-[#86868b] dark:text-[#98989d]">Account</span>
             <span className="text-[#1d1d1f] dark:text-white font-medium">{user?.email || email}</span>
           </div>
+        </div>
+      </section>
+
+      <section className="mb-12">
+        <h2 className="text-sm font-medium text-[#86868b] dark:text-[#98989d] uppercase tracking-wider mb-4">
+          Legal & Help
+        </h2>
+        <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl divide-y divide-gray-100 dark:divide-[#38383a]">
+          <Link
+            to="/faq"
+            className="flex items-center gap-4 px-6 py-4 hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] transition-colors rounded-t-2xl"
+          >
+            <HelpCircle className="w-5 h-5 text-[#86868b] dark:text-[#98989d]" />
+            <div className="flex-1">
+              <p className="font-medium text-[#1d1d1f] dark:text-white">Help center</p>
+              <p className="text-sm text-[#86868b] dark:text-[#98989d]">
+                Answers to common questions
+              </p>
+            </div>
+            <span className="text-[#86868b] dark:text-[#98989d]">→</span>
+          </Link>
+          <Link
+            to="/privacy"
+            className="flex items-center gap-4 px-6 py-4 hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] transition-colors"
+          >
+            <Shield className="w-5 h-5 text-[#86868b] dark:text-[#98989d]" />
+            <div className="flex-1">
+              <p className="font-medium text-[#1d1d1f] dark:text-white">Privacy policy</p>
+              <p className="text-sm text-[#86868b] dark:text-[#98989d]">
+                How we handle your data
+              </p>
+            </div>
+            <span className="text-[#86868b] dark:text-[#98989d]">→</span>
+          </Link>
+          <Link
+            to="/terms"
+            className="flex items-center gap-4 px-6 py-4 hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] transition-colors"
+          >
+            <FileText className="w-5 h-5 text-[#86868b] dark:text-[#98989d]" />
+            <div className="flex-1">
+              <p className="font-medium text-[#1d1d1f] dark:text-white">Terms of service</p>
+              <p className="text-sm text-[#86868b] dark:text-[#98989d]">
+                Rules of the road
+              </p>
+            </div>
+            <span className="text-[#86868b] dark:text-[#98989d]">→</span>
+          </Link>
+          <a
+            href="mailto:adityabuilds@outlook.com?subject=ChainPilot%20Support"
+            className="flex items-center gap-4 px-6 py-4 hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] transition-colors rounded-b-2xl"
+          >
+            <Mail className="w-5 h-5 text-[#86868b] dark:text-[#98989d]" />
+            <div className="flex-1">
+              <p className="font-medium text-[#1d1d1f] dark:text-white">Contact support</p>
+              <p className="text-sm text-[#86868b] dark:text-[#98989d]">
+                adityabuilds@outlook.com
+              </p>
+            </div>
+            <span className="text-[#86868b] dark:text-[#98989d]">→</span>
+          </a>
         </div>
       </section>
     </div>

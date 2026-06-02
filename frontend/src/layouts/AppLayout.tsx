@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import BottomNav from './BottomNav';
+import Footer from '../components/landing/Footer';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -22,6 +23,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             {children}
           </div>
         </main>
+
+        {/* Footer */}
+        <Footer />
       </div>
 
       <BottomNav />
