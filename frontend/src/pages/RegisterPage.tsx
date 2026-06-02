@@ -282,7 +282,7 @@ const RegisterPage = () => {
 
       {/* Copyright */}
       <p className="absolute bottom-8 text-sm text-[#86868b] dark:text-[#98989d]">
-        © 2024 ChainPilot. All rights reserved.
+        &copy; {new Date().getFullYear()} ChainPilot. All rights reserved.
       </p>
     </div>
   );
