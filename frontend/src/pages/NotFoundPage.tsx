@@ -27,18 +27,19 @@ const NotFoundPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#fbfbfd] dark:bg-black text-[#1d1d1f] dark:text-white">
       <Navbar />
 
       <section
         ref={ref}
-        className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden bg-black px-6 pt-32 pb-20"
+        className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden bg-[#fbfbfd] dark:bg-black px-6 pt-32 pb-20"
       >
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-[radial-gradient(ellipse_at_center,rgba(255,69,58,0.10)_0%,transparent_70%)]" />
+          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.18)_0%,transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.12)_0%,transparent_70%)]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-[radial-gradient(ellipse_at_center,rgba(175,82,222,0.12)_0%,transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(175,82,222,0.08)_0%,transparent_70%)]" />
         </div>
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.03] hidden dark:block"
           style={{
             backgroundImage:
               'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
@@ -62,10 +63,10 @@ const NotFoundPage = () => {
             <span className="bg-gradient-to-r from-[#0a84ff] via-[#5e5ce6] to-[#bf5af2] bg-clip-text text-transparent">
               Lost
             </span>
-            <span className="text-white">.</span>
+            <span className="text-[#1d1d1f] dark:text-white">.</span>
           </h1>
           <p
-            className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light max-w-[480px] mx-auto mb-10 transition-all duration-700 ease-out delay-200 ${
+            className={`text-[clamp(17px,2vw,21px)] text-[#86868b] dark:text-white/40 font-light max-w-[480px] mx-auto mb-10 transition-all duration-700 ease-out delay-200 ${
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
           >
@@ -80,14 +81,14 @@ const NotFoundPage = () => {
             <button
               type="button"
               onClick={goHome}
-              className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-white text-black text-[15px] font-medium hover:bg-white/90 transition-all duration-300 active:scale-[0.97]"
+              className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-[#1d1d1f] text-white dark:bg-[#3a3a3c] dark:text-white hover:bg-black dark:hover:bg-[#48484a] transition-all duration-300 active:scale-[0.97]"
             >
               <Home className="w-4 h-4" />
               {isAuthenticated ? 'Back to dashboard' : 'Go home'}
             </button>
             <Link
               to="/faq"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full border border-white/[0.12] bg-white/[0.04] text-white text-[15px] font-medium hover:bg-white/[0.08] hover:border-white/[0.2] transition-all duration-300"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full border border-black/[0.12] dark:border-white/[0.12] bg-black/[0.04] dark:bg-white/[0.04] text-[#1d1d1f] dark:text-white text-[15px] font-medium hover:bg-black/[0.08] dark:hover:bg-white/[0.08] hover:border-black/[0.2] dark:hover:border-white/[0.2] transition-all duration-300"
             >
               <Search className="w-4 h-4" />
               Visit the help center

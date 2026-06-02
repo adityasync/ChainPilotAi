@@ -156,19 +156,19 @@ const FAQPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#fbfbfd] dark:bg-black text-[#1d1d1f] dark:text-white">
       <Navbar />
 
       {/* Hero */}
       <section
         ref={heroRef}
-        className="relative pt-40 pb-20 px-6 overflow-hidden bg-black"
+        className="relative pt-40 pb-20 px-6 overflow-hidden bg-[#fbfbfd] dark:bg-black"
       >
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.10)_0%,transparent_70%)]" />
+          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.06)_0%,transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.10)_0%,transparent_70%)]" />
         </div>
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.03] hidden dark:block"
           style={{
             backgroundImage:
               'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
@@ -178,7 +178,7 @@ const FAQPage = () => {
 
         <div className="relative max-w-[900px] mx-auto text-center">
           <span
-            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] text-[11px] font-medium text-white/50 tracking-wide mb-8 transition-all duration-700 ease-out ${
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.08] bg-black/[0.03] dark:bg-white/[0.03] text-[11px] font-medium text-[#1d1d1f]/60 dark:text-white/50 tracking-wide mb-8 transition-all duration-700 ease-out ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
           >
@@ -186,7 +186,7 @@ const FAQPage = () => {
             Help Center
           </span>
           <h1
-            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-white leading-[1.05] mb-5 transition-all duration-700 ease-out delay-100 ${
+            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-[#1d1d1f] dark:text-white leading-[1.05] mb-5 transition-all duration-700 ease-out delay-100 ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
@@ -196,7 +196,7 @@ const FAQPage = () => {
             </span>
           </h1>
           <p
-            className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light max-w-[520px] mx-auto transition-all duration-700 ease-out delay-200 ${
+            className={`text-[clamp(17px,2vw,21px)] text-[#86868b] dark:text-white/40 font-light max-w-[520px] mx-auto transition-all duration-700 ease-out delay-200 ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
           >
@@ -209,13 +209,13 @@ const FAQPage = () => {
             }`}
           >
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b] dark:text-white/30" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search the help center…"
-                className="w-full pl-11 pr-4 py-3 rounded-full bg-white/[0.04] border border-white/[0.08] text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/[0.2] focus:bg-white/[0.06] transition-all duration-300"
+                className="w-full pl-11 pr-4 py-3 rounded-full bg-[#f5f5f7] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] text-[14px] text-[#1d1d1f] dark:text-white placeholder:text-[#86868b] dark:placeholder:text-white/30 focus:outline-none focus:border-black/[0.2] dark:focus:border-white/[0.2] focus:bg-white dark:focus:bg-white/[0.06] transition-all duration-300"
               />
             </div>
           </div>
@@ -227,7 +227,7 @@ const FAQPage = () => {
         <div className="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-12">
           {/* Category nav */}
           <aside className="lg:sticky lg:top-24 lg:self-start">
-            <p className="text-[11px] font-semibold text-white/40 tracking-[0.05em] uppercase mb-4 px-1">
+            <p className="text-[11px] font-semibold text-[#86868b] dark:text-white/40 tracking-[0.05em] uppercase mb-4 px-1">
               Categories
             </p>
             <nav className="space-y-1">
@@ -240,8 +240,8 @@ const FAQPage = () => {
                     onClick={() => setActiveCategory(cat.id)}
                     className={`block px-4 py-2.5 rounded-xl text-[13px] font-light transition-all duration-300 ${
                       isActive
-                        ? 'bg-white/[0.06] text-white'
-                        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.03]'
+                        ? 'bg-black/[0.06] dark:bg-white/[0.06] text-[#1d1d1f] dark:text-white'
+                        : 'text-[#86868b] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white/70 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]'
                     }`}
                   >
                     {cat.label}
@@ -250,11 +250,11 @@ const FAQPage = () => {
               })}
             </nav>
 
-            <div className="mt-10 p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
-              <p className="text-[13px] text-white/70 font-medium mb-1">
+            <div className="mt-10 p-5 rounded-2xl border border-black/[0.08] dark:border-white/[0.06] bg-[#f5f5f7] dark:bg-white/[0.02]">
+              <p className="text-[13px] text-[#1d1d1f] dark:text-white/70 font-medium mb-1">
                 Still need help?
               </p>
-              <p className="text-[12px] text-white/40 font-light leading-[1.6] mb-3">
+              <p className="text-[12px] text-[#86868b] dark:text-white/40 font-light leading-[1.6] mb-3">
                 We usually reply within a few hours.
               </p>
               <a
@@ -270,14 +270,14 @@ const FAQPage = () => {
           <div className="space-y-16">
             {filtered.length === 0 ? (
               <div className="text-center py-20">
-                <p className="text-[15px] text-white/40 font-light">
+                <p className="text-[15px] text-[#86868b] dark:text-white/40 font-light">
                   No results for "{query}". Try a different keyword.
                 </p>
               </div>
             ) : (
               filtered.map((cat) => (
                 <div key={cat.id} id={cat.id} className="scroll-mt-24">
-                  <h2 className="text-[24px] font-semibold tracking-[-0.02em] text-white mb-6">
+                  <h2 className="text-[24px] font-semibold tracking-[-0.02em] text-[#1d1d1f] dark:text-white mb-6">
                     {cat.label}
                   </h2>
                   <div className="space-y-2">
@@ -288,8 +288,8 @@ const FAQPage = () => {
                           key={`${cat.id}:${idx}`}
                           className={`rounded-[16px] border transition-all duration-300 ${
                             isOpen
-                              ? 'border-white/[0.08] bg-white/[0.03]'
-                              : 'border-transparent bg-white/[0.02] hover:bg-white/[0.04]'
+                              ? 'border-black/[0.10] dark:border-white/[0.08] bg-white dark:bg-white/[0.03]'
+                              : 'border-transparent bg-[#f5f5f7] dark:bg-white/[0.02] hover:bg-white dark:hover:bg-white/[0.04]'
                           }`}
                         >
                           <button
@@ -299,7 +299,7 @@ const FAQPage = () => {
                           >
                             <span
                               className={`text-[15px] font-medium pr-4 transition-colors duration-300 ${
-                                isOpen ? 'text-[#0a84ff]' : 'text-white/80'
+                                isOpen ? 'text-[#0a84ff]' : 'text-[#1d1d1f] dark:text-white/80'
                               }`}
                             >
                               {item.q}
@@ -308,7 +308,7 @@ const FAQPage = () => {
                               className={`w-4 h-4 flex-shrink-0 transition-all duration-300 ${
                                 isOpen
                                   ? 'rotate-180 text-[#0a84ff]'
-                                  : 'text-white/20'
+                                  : 'text-[#86868b] dark:text-white/20'
                               }`}
                             />
                           </button>
@@ -318,7 +318,7 @@ const FAQPage = () => {
                             }`}
                           >
                             <div className="px-6 pb-5">
-                              <p className="text-[14px] leading-[1.7] text-white/40 font-light">
+                              <p className="text-[14px] leading-[1.7] text-[#1d1d1f]/70 dark:text-white/40 font-light">
                                 {item.a}
                               </p>
                             </div>

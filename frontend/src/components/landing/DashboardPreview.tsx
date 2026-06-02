@@ -50,19 +50,19 @@ const DashboardPreview = () => {
   }, []);
 
   return (
-    <section id="dashboard" ref={ref} className="py-[var(--space-section)] px-6 bg-black overflow-hidden">
+    <section id="dashboard" ref={ref} className="py-[var(--space-section)] px-6 bg-[#fbfbfd] dark:bg-black overflow-hidden">
       <div className="max-w-[1200px] mx-auto">
         {/* Section header */}
         <div className="text-center mb-16">
           <h2
-            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-white leading-[1.05] mb-4 transition-all duration-700 ease-out ${
+            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-[#1d1d1f] dark:text-white leading-[1.05] mb-4 transition-all duration-700 ease-out ${
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
             The Dashboard.
           </h2>
           <p
-            className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light max-w-[500px] mx-auto transition-all duration-700 ease-out delay-100 ${
+            className={`text-[clamp(17px,2vw,21px)] text-[#86868b] dark:text-white/40 font-light max-w-[500px] mx-auto transition-all duration-700 ease-out delay-100 ${
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
           >
@@ -76,16 +76,16 @@ const DashboardPreview = () => {
             visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-[0.96]'
           }`}
         >
-          <div className="relative rounded-[20px] overflow-hidden border border-white/[0.06] shadow-[0_0_100px_-20px_rgba(10,132,255,0.15)]">
+          <div className="relative rounded-[20px] overflow-hidden border border-black/[0.08] dark:border-white/[0.06] shadow-[0_0_100px_-20px_rgba(10,132,255,0.18)] dark:shadow-[0_0_100px_-20px_rgba(10,132,255,0.15)]">
             {/* Browser chrome */}
-            <div className="bg-[#111] px-4 py-3 flex items-center gap-3 border-b border-white/[0.04]">
+            <div className="bg-[#f5f5f7] dark:bg-[#111] px-4 py-3 flex items-center gap-3 border-b border-black/[0.06] dark:border-white/[0.04]">
               <div className="flex gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]/70" />
                 <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]/70" />
                 <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]/70" />
               </div>
               <div className="flex-1 flex justify-center">
-                <div className="bg-[#2c2c2e] rounded-md px-4 py-1 text-[11px] text-[#6e6e73] font-medium">
+                <div className="bg-white dark:bg-[#2c2c2e] rounded-md px-4 py-1 text-[11px] text-[#86868b] font-medium">
                   dashboard.chainpilot.app
                 </div>
               </div>
@@ -93,14 +93,14 @@ const DashboardPreview = () => {
             </div>
 
             {/* Dashboard body */}
-            <div className="bg-[#1c1c1e] flex">
+            <div className="bg-white dark:bg-[#1c1c1e] flex">
               {/* Sidebar */}
-              <div className="hidden md:block w-44 bg-[#111] p-4 flex-shrink-0 border-r border-white/[0.04]">
+              <div className="hidden md:block w-44 bg-[#f5f5f7] dark:bg-[#111] p-4 flex-shrink-0 border-r border-black/[0.06] dark:border-white/[0.04]">
                 <div className="flex items-center gap-2.5 mb-6">
                   <div className="w-8 h-8 rounded-lg bg-[#0a84ff]/10 flex items-center justify-center">
                     <Package className="w-4 h-4 text-[#0a84ff]" />
                   </div>
-                  <span className="text-[13px] font-semibold text-white">ChainPilot</span>
+                  <span className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">ChainPilot</span>
                 </div>
                 <div className="space-y-1">
                   {['Dashboard', 'Inventory', 'Demand', 'Suppliers', 'Insights'].map(
@@ -109,13 +109,13 @@ const DashboardPreview = () => {
                         key={item}
                         className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] ${
                           i === 0
-                            ? 'bg-white/[0.08] text-white font-medium'
-                            : 'text-white/30 hover:text-white/50'
+                            ? 'bg-black/[0.05] text-[#1d1d1f] font-medium dark:bg-white/[0.08] dark:text-white'
+                            : 'text-[#86868b] hover:text-[#1d1d1f] dark:text-white/30 dark:hover:text-white/50'
                         }`}
                       >
                         <div
                           className={`w-2 h-2 rounded-sm ${
-                            i === 0 ? 'bg-[#0a84ff]' : 'bg-white/10'
+                            i === 0 ? 'bg-[#0a84ff]' : 'bg-black/[0.1] dark:bg-white/10'
                           }`}
                         />
                         {item}
@@ -137,13 +137,13 @@ const DashboardPreview = () => {
                   ].map((kpi) => (
                     <div
                       key={kpi.label}
-                      className="bg-[#2c2c2e] rounded-xl p-4 border border-white/[0.04]"
+                      className="bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-4 border border-black/[0.04] dark:border-white/[0.04]"
                     >
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <kpi.icon className="w-3.5 h-3.5" style={{ color: kpi.color }} />
-                        <span className="text-[10px] text-white/30">{kpi.label}</span>
+                        <span className="text-[10px] text-[#86868b] dark:text-white/30">{kpi.label}</span>
                       </div>
-                      <div className="text-[20px] font-semibold text-white">{kpi.value}</div>
+                      <div className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white">{kpi.value}</div>
                     </div>
                   ))}
                 </div>
@@ -151,9 +151,9 @@ const DashboardPreview = () => {
                 {/* Charts row */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                   {/* Demand chart */}
-                  <div className="lg:col-span-2 bg-[#2c2c2e] rounded-xl p-4 border border-white/[0.04]">
+                  <div className="lg:col-span-2 bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-4 border border-black/[0.04] dark:border-white/[0.04]">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="text-[12px] font-medium text-white">Demand Trend</div>
+                      <div className="text-[12px] font-medium text-[#1d1d1f] dark:text-white">Demand Trend</div>
                       <TrendingUp className="w-4 h-4 text-[#0a84ff]" />
                     </div>
                     <div className="h-32">
@@ -165,10 +165,10 @@ const DashboardPreview = () => {
                               <stop offset="95%" stopColor="#0a84ff" stopOpacity={0} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" className="dark:stroke-[rgba(255,255,255,0.04)]" />
                           <XAxis
                             dataKey="label"
-                            tick={{ fill: '#6e6e73', fontSize: 10 }}
+                            tick={{ fill: '#86868b', fontSize: 10 }}
                             axisLine={false}
                             tickLine={false}
                           />
@@ -186,8 +186,8 @@ const DashboardPreview = () => {
                   </div>
 
                   {/* Pie chart */}
-                  <div className="bg-[#2c2c2e] rounded-xl p-4 border border-white/[0.04]">
-                    <div className="text-[12px] font-medium text-white mb-3">Inventory</div>
+                  <div className="bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-4 border border-black/[0.04] dark:border-white/[0.04]">
+                    <div className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-3">Inventory</div>
                     <div className="h-28">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -214,7 +214,7 @@ const DashboardPreview = () => {
                             className="w-1.5 h-1.5 rounded-full"
                             style={{ backgroundColor: d.color }}
                           />
-                          <span className="text-[9px] text-white/30">{d.name}</span>
+                          <span className="text-[9px] text-[#86868b] dark:text-white/30">{d.name}</span>
                         </div>
                       ))}
                     </div>
@@ -224,8 +224,8 @@ const DashboardPreview = () => {
                 {/* Bottom row */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                   {/* Top products */}
-                  <div className="bg-[#2c2c2e] rounded-xl p-4 border border-white/[0.04]">
-                    <div className="text-[12px] font-medium text-white mb-3">Top Products</div>
+                  <div className="bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-4 border border-black/[0.04] dark:border-white/[0.04]">
+                    <div className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-3">Top Products</div>
                     <div className="space-y-2.5">
                       {[
                         { name: 'Widget Pro', qty: '1.2k', status: '#30d158' },
@@ -234,9 +234,9 @@ const DashboardPreview = () => {
                         { name: 'Module B', qty: '650', status: '#ff453a' },
                       ].map((p) => (
                         <div key={p.name} className="flex items-center justify-between">
-                          <span className="text-[11px] text-white/70">{p.name}</span>
+                          <span className="text-[11px] text-[#1d1d1f]/80 dark:text-white/70">{p.name}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-[11px] text-white/30">{p.qty}</span>
+                            <span className="text-[11px] text-[#86868b] dark:text-white/30">{p.qty}</span>
                             <div
                               className="w-1.5 h-1.5 rounded-full"
                               style={{ backgroundColor: p.status }}
@@ -248,8 +248,8 @@ const DashboardPreview = () => {
                   </div>
 
                   {/* Insights */}
-                  <div className="bg-[#2c2c2e] rounded-xl p-4 border border-white/[0.04]">
-                    <div className="text-[12px] font-medium text-white mb-3">Priority Insights</div>
+                  <div className="bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-4 border border-black/[0.04] dark:border-white/[0.04]">
+                    <div className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-3">Priority Insights</div>
                     <div className="space-y-3">
                       {insights.map((ins, i) => (
                         <div key={i} className="flex items-start gap-2.5">
@@ -258,10 +258,10 @@ const DashboardPreview = () => {
                             style={{ backgroundColor: ins.sev }}
                           />
                           <div>
-                            <div className="text-[11px] font-medium text-white/80">
+                            <div className="text-[11px] font-medium text-[#1d1d1f] dark:text-white/80">
                               {ins.title}
                             </div>
-                            <div className="text-[10px] text-white/30">{ins.desc}</div>
+                            <div className="text-[10px] text-[#86868b] dark:text-white/30">{ins.desc}</div>
                           </div>
                         </div>
                       ))}
@@ -269,16 +269,16 @@ const DashboardPreview = () => {
                   </div>
 
                   {/* Suppliers */}
-                  <div className="bg-[#2c2c2e] rounded-xl p-4 border border-white/[0.04]">
-                    <div className="text-[12px] font-medium text-white mb-3">Supplier Health</div>
+                  <div className="bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-xl p-4 border border-black/[0.04] dark:border-white/[0.04]">
+                    <div className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-3">Supplier Health</div>
                     <div className="space-y-3">
                       {[
-                        { label: 'Total', value: '12', color: 'text-white' },
+                        { label: 'Total', value: '12', color: 'text-[#1d1d1f] dark:text-white' },
                         { label: 'At Risk', value: '3', color: 'text-[#ff453a]' },
                         { label: 'Reliability', value: '87%', color: 'text-[#30d158]' },
                       ].map((item) => (
                         <div key={item.label} className="flex items-center justify-between">
-                          <span className="text-[11px] text-white/30">{item.label}</span>
+                          <span className="text-[11px] text-[#86868b] dark:text-white/30">{item.label}</span>
                           <span className={`text-[13px] font-medium ${item.color}`}>
                             {item.value}
                           </span>
@@ -289,14 +289,14 @@ const DashboardPreview = () => {
                 </div>
 
                 {/* AI chat bar */}
-                <div className="bg-[#2c2c2e] rounded-full px-4 py-3 flex items-center gap-3 border border-white/[0.04]">
+                <div className="bg-[#f5f5f7] dark:bg-[#2c2c2e] rounded-full px-4 py-3 flex items-center gap-3 border border-black/[0.04] dark:border-white/[0.04]">
                   <div className="w-6 h-6 rounded-full bg-[#0a84ff]/10 flex items-center justify-center">
                     <span className="text-[9px] font-bold text-[#0a84ff]">AI</span>
                   </div>
-                  <span className="text-[12px] text-white/30 flex-1">
+                  <span className="text-[12px] text-[#86868b] dark:text-white/30 flex-1">
                     Ask anything about your supply chain...
                   </span>
-                  <ArrowRight className="w-4 h-4 text-white/20" />
+                  <ArrowRight className="w-4 h-4 text-[#86868b] dark:text-white/20" />
                 </div>
               </div>
             </div>
@@ -327,7 +327,7 @@ const DashboardPreview = () => {
           ].map((item, i) => (
             <div
               key={item.title}
-              className={`text-center p-7 rounded-[20px] border border-white/[0.06] bg-white/[0.02] transition-all duration-700 ease-out hover:bg-white/[0.04] hover:border-white/[0.1] ${
+              className={`text-center p-7 rounded-[20px] border border-black/[0.08] dark:border-white/[0.06] bg-[#f5f5f7] dark:bg-white/[0.02] transition-all duration-700 ease-out hover:bg-white hover:border-black/[0.12] dark:hover:bg-white/[0.04] dark:hover:border-white/[0.1] ${
                 visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
               }`}
               style={{ transitionDelay: `${600 + i * 80}ms` }}
@@ -338,8 +338,8 @@ const DashboardPreview = () => {
               >
                 <item.icon className="w-5 h-5" style={{ color: item.color }} />
               </div>
-              <h3 className="text-[15px] font-semibold text-white mb-2">{item.title}</h3>
-              <p className="text-[13px] text-white/40 leading-relaxed font-light">{item.desc}</p>
+              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white mb-2">{item.title}</h3>
+              <p className="text-[13px] text-[#86868b] dark:text-white/40 leading-relaxed font-light">{item.desc}</p>
             </div>
           ))}
         </div>

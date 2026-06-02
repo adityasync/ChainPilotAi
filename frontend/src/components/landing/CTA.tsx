@@ -18,15 +18,15 @@ const CTA = () => {
   }, []);
 
   return (
-    <section ref={ref} className="py-[var(--space-section)] px-6 bg-black">
+    <section ref={ref} className="py-[var(--space-section)] px-6 bg-[#fbfbfd] dark:bg-black">
       <div className="max-w-[1200px] mx-auto">
-        <div className="relative rounded-[32px] overflow-hidden border border-white/[0.06] bg-[#1c1c1e]">
+        <div className="relative rounded-[32px] overflow-hidden border border-black/[0.08] dark:border-white/[0.06] bg-white dark:bg-[#1c1c1e]">
           {/* Background gradient */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.08)_0%,transparent_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.1)_0%,transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.08)_0%,transparent_70%)]" />
 
           <div className="relative px-8 py-20 md:py-28 text-center">
             <h2
-              className={`text-[clamp(36px,6vw,64px)] font-bold tracking-[-0.04em] text-white leading-[1.05] mb-5 text-balance transition-all duration-700 ease-out ${
+              className={`text-[clamp(36px,6vw,64px)] font-bold tracking-[-0.04em] text-[#1d1d1f] dark:text-white leading-[1.05] mb-5 text-balance transition-all duration-700 ease-out ${
                 visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
             >
@@ -35,7 +35,7 @@ const CTA = () => {
               your supply chain?
             </h2>
             <p
-              className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light mb-10 max-w-[400px] mx-auto transition-all duration-700 ease-out delay-100 ${
+              className={`text-[clamp(17px,2vw,21px)] text-[#86868b] dark:text-white/40 font-light mb-10 max-w-[400px] mx-auto transition-all duration-700 ease-out delay-100 ${
                 visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
               }`}
             >
@@ -48,14 +48,14 @@ const CTA = () => {
             >
               <Link
                 to="/register"
-                className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-white text-black text-[15px] font-medium hover:bg-white/90 transition-all duration-300 active:scale-[0.97]"
+                className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-[#1d1d1f] text-white dark:bg-white dark:text-black text-[15px] font-medium hover:bg-[#1d1d1f]/90 dark:hover:bg-white/90 transition-all duration-300 active:scale-[0.97]"
               >
                 Start free
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full border border-white/[0.12] bg-white/[0.04] text-white text-[15px] font-medium hover:bg-white/[0.08] hover:border-white/[0.2] transition-all duration-300"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full border border-black/[0.12] dark:border-white/[0.12] bg-[#f5f5f7] dark:bg-white/[0.04] text-[#1d1d1f] dark:text-white text-[15px] font-medium hover:bg-[#e8e8ed] dark:hover:bg-white/[0.08] hover:border-black/[0.2] dark:hover:border-white/[0.2] transition-all duration-300"
               >
                 Sign in
               </Link>

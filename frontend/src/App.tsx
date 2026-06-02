@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -24,6 +25,16 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
 
+const ProtectedAppShell = ({ children }: { children: ReactNode }) => (
+  <ProtectedRoute>
+    <AppLayout>
+      <ErrorBoundary>
+        {children}
+      </ErrorBoundary>
+    </AppLayout>
+  </ProtectedRoute>
+);
+
 function App() {
   return (
     <ThemeProvider>
@@ -32,6 +43,7 @@ function App() {
           <ScrollToTop />
           <div className="App">
             <Routes>
+              {/* Public routes — explicit paths only */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -41,28 +53,44 @@ function App() {
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
+
+              {/* Protected routes — each one wrapped individually so unknown
+                  paths fall through to the public 404 below instead of being
+                  intercepted by a catch-all ProtectedRoute */}
               <Route
-                path="/*"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <ErrorBoundary>
-                        <Routes>
-                          <Route path="/dashboard" element={<DashboardPage />} />
-                          <Route path="/inventory" element={<InventoryPage />} />
-                          <Route path="/demand" element={<DemandPlanningPage />} />
-                          <Route path="/orders" element={<OrdersPage />} />
-                          <Route path="/suppliers" element={<SupplierPage />} />
-                          <Route path="/insights" element={<InsightsPage />} />
-                          <Route path="/upload-data" element={<DataUploadPage />} />
-                          <Route path="/settings" element={<SettingsPage />} />
-                          <Route path="*" element={<NotFoundPage />} />
-                        </Routes>
-                      </ErrorBoundary>
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
+                path="/dashboard"
+                element={<ProtectedAppShell><DashboardPage /></ProtectedAppShell>}
               />
+              <Route
+                path="/inventory"
+                element={<ProtectedAppShell><InventoryPage /></ProtectedAppShell>}
+              />
+              <Route
+                path="/demand"
+                element={<ProtectedAppShell><DemandPlanningPage /></ProtectedAppShell>}
+              />
+              <Route
+                path="/orders"
+                element={<ProtectedAppShell><OrdersPage /></ProtectedAppShell>}
+              />
+              <Route
+                path="/suppliers"
+                element={<ProtectedAppShell><SupplierPage /></ProtectedAppShell>}
+              />
+              <Route
+                path="/insights"
+                element={<ProtectedAppShell><InsightsPage /></ProtectedAppShell>}
+              />
+              <Route
+                path="/upload-data"
+                element={<ProtectedAppShell><DataUploadPage /></ProtectedAppShell>}
+              />
+              <Route
+                path="/settings"
+                element={<ProtectedAppShell><SettingsPage /></ProtectedAppShell>}
+              />
+
+              {/* Public catch-all — only reached when no specific route matched */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </div>

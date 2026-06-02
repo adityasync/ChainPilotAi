@@ -61,19 +61,19 @@ const PrivacyPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#fbfbfd] dark:bg-black text-[#1d1d1f] dark:text-white">
       <Navbar />
 
       {/* Hero */}
       <section
         ref={heroRef}
-        className="relative pt-40 pb-16 px-6 overflow-hidden bg-black"
+        className="relative pt-40 pb-16 px-6 overflow-hidden bg-[#fbfbfd] dark:bg-black"
       >
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-[radial-gradient(ellipse_at_center,rgba(94,92,230,0.10)_0%,transparent_70%)]" />
+          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-[radial-gradient(ellipse_at_center,rgba(94,92,230,0.06)_0%,transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(94,92,230,0.10)_0%,transparent_70%)]" />
         </div>
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.03] hidden dark:block"
           style={{
             backgroundImage:
               'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
@@ -83,7 +83,7 @@ const PrivacyPage = () => {
 
         <div className="relative max-w-[900px] mx-auto text-center">
           <span
-            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] text-[11px] font-medium text-white/50 tracking-wide mb-8 transition-all duration-700 ease-out ${
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.08] bg-black/[0.03] dark:bg-white/[0.03] text-[11px] font-medium text-[#1d1d1f]/60 dark:text-white/50 tracking-wide mb-8 transition-all duration-700 ease-out ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
           >
@@ -91,7 +91,7 @@ const PrivacyPage = () => {
             Privacy Policy
           </span>
           <h1
-            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-white leading-[1.05] mb-5 transition-all duration-700 ease-out delay-100 ${
+            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-[#1d1d1f] dark:text-white leading-[1.05] mb-5 transition-all duration-700 ease-out delay-100 ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
@@ -101,14 +101,14 @@ const PrivacyPage = () => {
             </span>
           </h1>
           <p
-            className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light max-w-[520px] mx-auto transition-all duration-700 ease-out delay-200 ${
+            className={`text-[clamp(17px,2vw,21px)] text-[#86868b] dark:text-white/40 font-light max-w-[520px] mx-auto transition-all duration-700 ease-out delay-200 ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
           >
             Plain English. No legalese walls of text.
           </p>
           <p
-            className={`mt-6 text-[12px] text-white/30 font-light transition-all duration-700 ease-out delay-300 ${
+            className={`mt-6 text-[12px] text-[#86868b] dark:text-white/30 font-light transition-all duration-700 ease-out delay-300 ${
               heroVisible ? 'opacity-100' : 'opacity-0'
             }`}
           >
@@ -122,7 +122,7 @@ const PrivacyPage = () => {
         <div className="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-12">
           {/* TOC */}
           <aside className="lg:sticky lg:top-24 lg:self-start">
-            <p className="text-[11px] font-semibold text-white/40 tracking-[0.05em] uppercase mb-4 px-1">
+            <p className="text-[11px] font-semibold text-[#86868b] dark:text-white/40 tracking-[0.05em] uppercase mb-4 px-1">
               On this page
             </p>
             <nav className="space-y-1">
@@ -134,8 +134,8 @@ const PrivacyPage = () => {
                     href={`#${s.id}`}
                     className={`block px-4 py-2 rounded-lg text-[12px] font-light transition-all duration-300 leading-[1.5] ${
                       isActive
-                        ? 'bg-white/[0.06] text-white'
-                        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.03]'
+                        ? 'bg-black/[0.06] dark:bg-white/[0.06] text-[#1d1d1f] dark:text-white'
+                        : 'text-[#86868b] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white/70 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]'
                     }`}
                   >
                     {s.title}
@@ -166,21 +166,21 @@ const PrivacyPage = () => {
               <p>We collect three categories of information:</p>
               <ul>
                 <li>
-                  <strong className="text-white/80 font-medium">
+                  <strong>
                     Account information
                   </strong>{' '}
                   — your email address, company name, industry, and password
                   (stored as a bcrypt hash).
                 </li>
                 <li>
-                  <strong className="text-white/80 font-medium">
+                  <strong>
                     Operational data
                   </strong>{' '}
                   — the supply chain data you upload: products, inventory,
                   suppliers, orders, and any optional context you provide.
                 </li>
                 <li>
-                  <strong className="text-white/80 font-medium">
+                  <strong>
                     Usage telemetry
                   </strong>{' '}
                   — request logs, IP addresses, and aggregated feature usage
@@ -212,9 +212,7 @@ const PrivacyPage = () => {
               <p>
                 Every ChainPilot workspace is a fully isolated tenant. All
                 API endpoints filter records by a{' '}
-                <code className="px-1.5 py-0.5 rounded bg-white/[0.06] text-[13px] text-white/80 font-mono">
-                  company_id
-                </code>{' '}
+                <code>company_id</code>{' '}
                 extracted from your JWT — enforced structurally by our
                 company_isolation module. It is impossible to query another
                 tenant's data, even with a valid token from a different
@@ -226,9 +224,7 @@ const PrivacyPage = () => {
               <p>
                 Our forecasting, classification, and anomaly models are
                 pre-trained and loaded at startup from{' '}
-                <code className="px-1.5 py-0.5 rounded bg-white/[0.06] text-[13px] text-white/80 font-mono">
-                  .pkl
-                </code>{' '}
+                <code>.pkl</code>{' '}
                 files. We never train on your data, we never export your
                 data to train external models, and we never use your
                 operational data as input to third-party ML providers.
@@ -325,7 +321,6 @@ const PrivacyPage = () => {
                 Questions, concerns, or data requests? Email{' '}
                 <a
                   href="mailto:adityabuilds@outlook.com?subject=ChainPilot%20Privacy%20Request"
-                  className="text-[#0a84ff] hover:text-[#5e9bff] transition-colors"
                 >
                   adityabuilds@outlook.com
                 </a>
@@ -334,7 +329,7 @@ const PrivacyPage = () => {
               </p>
             </Section>
 
-            <div className="mt-16 pt-8 border-t border-white/[0.06] text-[12px] text-white/30 font-light">
+            <div className="mt-16 pt-8 border-t border-black/[0.08] dark:border-white/[0.06] text-[12px] text-[#86868b] dark:text-white/30 font-light">
               &copy; {new Date().getFullYear()} ChainPilot. All rights
               reserved.
             </div>
@@ -357,10 +352,10 @@ const Section = ({
   children: React.ReactNode;
 }) => (
   <section id={id} className="scroll-mt-24 mb-12">
-    <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-white mb-4">
+    <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-[#1d1d1f] dark:text-white mb-4">
       {title}
     </h2>
-    <div className="space-y-4 text-[15px] leading-[1.75] text-white/55 font-light [&_ul]:space-y-2 [&_ul]:pl-5 [&_ul]:list-disc [&_ul>li]:marker:text-white/20 [&_a]:text-[#0a84ff] [&_a]:hover:text-[#5e9bff] [&_a]:transition-colors [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:bg-white/[0.06] [&_code]:text-[13px] [&_code]:text-white/80 [&_code]:font-mono [&_strong]:text-white/80 [&_strong]:font-medium">
+    <div className="space-y-4 text-[15px] leading-[1.75] text-[#1d1d1f]/70 dark:text-white/55 font-light [&_ul]:space-y-2 [&_ul]:pl-5 [&_ul]:list-disc [&_ul>li]:marker:text-[#1d1d1f]/30 [&_ul>li]:dark:marker:text-white/20 [&_a]:text-[#0a84ff] [&_a]:hover:text-[#5e9bff] [&_a]:transition-colors [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:bg-black/[0.06] [&_code]:dark:bg-white/[0.06] [&_code]:text-[13px] [&_code]:text-[#1d1d1f]/80 [&_code]:dark:text-white/80 [&_code]:font-mono [&_strong]:text-[#1d1d1f] [&_strong]:dark:text-white/80 [&_strong]:font-medium">
       {children}
     </div>
   </section>

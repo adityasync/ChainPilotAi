@@ -46,6 +46,12 @@
 
 html {
   scroll-behavior: smooth;
+  background-color: #fbfbfd;
+  transition: background-color 0.3s var(--ease-out);
+}
+
+html.dark {
+  background-color: #000000;
 }
 
 body {
@@ -55,7 +61,13 @@ body {
   line-height: 1.47059;
   letter-spacing: -0.022em;
   color: var(--color-text);
-  background-color: var(--color-bg);
+  background-color: #fbfbfd;
+  transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out);
+}
+
+html.dark body {
+  background-color: #000000;
+  color: var(--color-text);
 }
 
 h1,

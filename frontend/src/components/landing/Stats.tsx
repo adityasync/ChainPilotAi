@@ -47,19 +47,19 @@ const Stats = () => {
   }, []);
 
   return (
-    <section ref={ref} className="py-[var(--space-section)] px-6 bg-black">
+    <section ref={ref} className="py-[var(--space-section)] px-6 bg-[#fbfbfd] dark:bg-black">
       <div className="max-w-[1200px] mx-auto">
         {/* Section header */}
         <div className="text-center mb-20">
           <h2
-            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-white leading-[1.05] mb-4 transition-all duration-700 ease-out ${
+            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-[#1d1d1f] dark:text-white leading-[1.05] mb-4 transition-all duration-700 ease-out ${
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
             Performance.
           </h2>
           <p
-            className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light max-w-[500px] mx-auto transition-all duration-700 ease-out delay-100 ${
+            className={`text-[clamp(17px,2vw,21px)] text-[#86868b] dark:text-white/40 font-light max-w-[500px] mx-auto transition-all duration-700 ease-out delay-100 ${
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
           >
@@ -72,14 +72,14 @@ const Stats = () => {
           {stats.map((stat, i) => (
             <div
               key={stat.unit}
-              className={`group relative p-8 md:p-10 rounded-[24px] border border-white/[0.06] bg-[#1c1c1e] overflow-hidden transition-all duration-700 ease-out hover:border-white/[0.1] ${
+              className={`group relative p-8 md:p-10 rounded-[24px] border border-black/[0.08] dark:border-white/[0.06] bg-white dark:bg-[#1c1c1e] overflow-hidden transition-all duration-700 ease-out hover:border-black/[0.12] dark:hover:border-white/[0.1] ${
                 visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
               style={{ transitionDelay: `${200 + i * 100}ms` }}
             >
               {/* Background glow */}
               <div
-                className="absolute top-0 right-0 w-[300px] h-[300px] opacity-[0.06] transition-opacity duration-500 group-hover:opacity-[0.1]"
+                className="absolute top-0 right-0 w-[300px] h-[300px] opacity-[0.08] transition-opacity duration-500 group-hover:opacity-[0.14]"
                 style={{
                   background: `radial-gradient(circle at center, ${stat.color}, transparent 70%)`,
                 }}
@@ -103,12 +103,12 @@ const Stats = () => {
                 </div>
 
                 {/* Unit label */}
-                <p className="text-[15px] font-semibold text-white/70 tracking-[-0.01em] mb-3">
+                <p className="text-[15px] font-semibold text-[#1d1d1f]/80 dark:text-white/70 tracking-[-0.01em] mb-3">
                   {stat.unit}
                 </p>
 
                 {/* Description */}
-                <p className="text-[14px] leading-[1.6] text-white/30 font-light max-w-[360px]">
+                <p className="text-[14px] leading-[1.6] text-[#86868b] dark:text-white/30 font-light max-w-[360px]">
                   {stat.description}
                 </p>
               </div>

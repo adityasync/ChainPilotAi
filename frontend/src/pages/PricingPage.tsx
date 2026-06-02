@@ -134,19 +134,19 @@ const PricingPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#fbfbfd] dark:bg-black text-[#1d1d1f] dark:text-white">
       <Navbar />
 
       {/* Hero */}
       <section
         ref={heroRef}
-        className="relative pt-40 pb-16 px-6 overflow-hidden bg-black"
+        className="relative pt-40 pb-16 px-6 overflow-hidden bg-[#fbfbfd] dark:bg-black"
       >
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.12)_0%,transparent_70%)]" />
+          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.08)_0%,transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(10,132,255,0.12)_0%,transparent_70%)]" />
         </div>
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.03] hidden dark:block"
           style={{
             backgroundImage:
               'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
@@ -156,14 +156,14 @@ const PricingPage = () => {
 
         <div className="relative max-w-[900px] mx-auto text-center">
           <span
-            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] text-[11px] font-medium text-white/50 tracking-wide mb-8 transition-all duration-700 ease-out ${
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.08] bg-black/[0.03] dark:bg-white/[0.03] text-[11px] font-medium text-[#1d1d1f]/60 dark:text-white/50 tracking-wide mb-8 transition-all duration-700 ease-out ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
           >
             Pricing
           </span>
           <h1
-            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-white leading-[1.05] mb-5 transition-all duration-700 ease-out delay-100 ${
+            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-[#1d1d1f] dark:text-white leading-[1.05] mb-5 transition-all duration-700 ease-out delay-100 ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
@@ -173,7 +173,7 @@ const PricingPage = () => {
             </span>
           </h1>
           <p
-            className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light max-w-[520px] mx-auto transition-all duration-700 ease-out delay-200 ${
+            className={`text-[clamp(17px,2vw,21px)] text-[#86868b] dark:text-white/40 font-light max-w-[520px] mx-auto transition-all duration-700 ease-out delay-200 ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
           >
@@ -190,8 +190,8 @@ const PricingPage = () => {
               key={tier.id}
               className={`relative rounded-[24px] p-8 flex flex-col transition-all duration-500 ${
                 tier.highlighted
-                  ? 'bg-white/[0.04] border border-[#0a84ff]/30 shadow-[0_0_60px_-20px_rgba(10,132,255,0.4)]'
-                  : 'bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.03]'
+                  ? 'bg-white dark:bg-white/[0.04] border border-[#0a84ff]/30 shadow-[0_0_60px_-20px_rgba(10,132,255,0.4)]'
+                  : 'bg-white dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.06] hover:bg-[#f5f5f7] dark:hover:bg-white/[0.03]'
               }`}
               style={{ transitionDelay: `${i * 100}ms` }}
             >
@@ -203,18 +203,18 @@ const PricingPage = () => {
               )}
 
               <div className="mb-6">
-                <h3 className="text-[14px] font-semibold text-white/60 tracking-[0.05em] uppercase mb-3">
+                <h3 className="text-[14px] font-semibold text-[#86868b] dark:text-white/60 tracking-[0.05em] uppercase mb-3">
                   {tier.name}
                 </h3>
                 <div className="flex items-baseline gap-1.5 mb-3">
-                  <span className="text-[44px] font-bold text-white tracking-[-0.03em]">
+                  <span className="text-[44px] font-bold text-[#1d1d1f] dark:text-white tracking-[-0.03em]">
                     {tier.price}
                   </span>
-                  <span className="text-[14px] text-white/40 font-light">
+                  <span className="text-[14px] text-[#86868b] dark:text-white/40 font-light">
                     {tier.period}
                   </span>
                 </div>
-                <p className="text-[13px] text-white/40 font-light leading-[1.6] min-h-[3.2em]">
+                <p className="text-[13px] text-[#1d1d1f]/70 dark:text-white/40 font-light leading-[1.6] min-h-[3.2em]">
                   {tier.description}
                 </p>
               </div>
@@ -223,7 +223,7 @@ const PricingPage = () => {
                 {tier.features.map((f) => (
                   <li key={f} className="flex items-start gap-3">
                     <Check className="w-4 h-4 text-[#30d158] flex-shrink-0 mt-0.5" />
-                    <span className="text-[13px] text-white/70 font-light leading-[1.5]">
+                    <span className="text-[13px] text-[#1d1d1f] dark:text-white/70 font-light leading-[1.5]">
                       {f}
                     </span>
                   </li>
@@ -234,8 +234,8 @@ const PricingPage = () => {
                 to={tier.ctaTo}
                 className={`inline-flex items-center justify-center gap-2 w-full px-6 py-3 rounded-full text-[14px] font-medium transition-all duration-300 ${
                   tier.highlighted
-                    ? 'bg-white text-black hover:bg-white/90 active:scale-[0.97]'
-                    : 'border border-white/[0.12] bg-white/[0.04] text-white hover:bg-white/[0.08] hover:border-white/[0.2]'
+                    ? 'bg-[#1d1d1f] text-white dark:bg-white dark:text-black hover:bg-black dark:hover:bg-white/90 active:scale-[0.97]'
+                    : 'border border-black/[0.12] dark:border-white/[0.12] bg-black/[0.04] dark:bg-white/[0.04] text-[#1d1d1f] dark:text-white hover:bg-black/[0.08] dark:hover:bg-white/[0.08] hover:border-black/[0.2] dark:hover:border-white/[0.2]'
                 }`}
               >
                 {tier.cta}
@@ -249,43 +249,43 @@ const PricingPage = () => {
       {/* Comparison table */}
       <section className="px-6 pb-24">
         <div className="max-w-[1000px] mx-auto">
-          <h2 className="text-[clamp(28px,4vw,40px)] font-bold tracking-[-0.02em] text-white mb-2 text-center">
+          <h2 className="text-[clamp(28px,4vw,40px)] font-bold tracking-[-0.02em] text-[#1d1d1f] dark:text-white mb-2 text-center">
             Compare plans
           </h2>
-          <p className="text-[15px] text-white/40 font-light text-center mb-12">
+          <p className="text-[15px] text-[#86868b] dark:text-white/40 font-light text-center mb-12">
             Every plan includes the full ML pipeline and AI assistant.
           </p>
 
           {/* Mobile note: the tier cards above already list every feature,
               so the side-by-side comparison is hidden on small screens to
               avoid a wrapping grid that misaligns labels with values. */}
-          <div className="hidden md:block rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-            <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-white/[0.06] bg-white/[0.02]">
-              <div className="text-[11px] font-semibold text-white/40 tracking-[0.05em] uppercase">
+          <div className="hidden md:block rounded-2xl border border-black/[0.08] dark:border-white/[0.06] bg-white dark:bg-white/[0.02] overflow-hidden">
+            <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-4 px-6 py-4 border-b border-black/[0.06] dark:border-white/[0.06] bg-[#f5f5f7] dark:bg-white/[0.02]">
+              <div className="text-[11px] font-semibold text-[#86868b] dark:text-white/40 tracking-[0.05em] uppercase">
                 Feature
               </div>
-              <div className="text-[12px] font-semibold text-white/60 text-center">Free</div>
+              <div className="text-[12px] font-semibold text-[#1d1d1f] dark:text-white/60 text-center">Free</div>
               <div className="text-[12px] font-semibold text-[#0a84ff] text-center">Pro</div>
-              <div className="text-[12px] font-semibold text-white/60 text-center">Team</div>
+              <div className="text-[12px] font-semibold text-[#1d1d1f] dark:text-white/60 text-center">Team</div>
             </div>
 
             {comparison.map((row, i) => (
               <div
                 key={row.label}
                 className={`grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-4 px-6 py-4 ${
-                  i < comparison.length - 1 ? 'border-b border-white/[0.04]' : ''
+                  i < comparison.length - 1 ? 'border-b border-black/[0.04] dark:border-white/[0.04]' : ''
                 }`}
               >
-                <div className="text-[13px] text-white/70 font-light">{row.label}</div>
-                <Cell value={row.free} muted />
+                <div className="text-[13px] text-[#1d1d1f] dark:text-white/70 font-light">{row.label}</div>
+                <Cell value={row.free} />
                 <Cell value={row.pro} highlight />
-                <Cell value={row.team} muted />
+                <Cell value={row.team} />
               </div>
             ))}
           </div>
 
           {/* Mobile fallback — "see the tier cards above" hint */}
-          <p className="md:hidden text-center text-[13px] text-white/30 font-light">
+          <p className="md:hidden text-center text-[13px] text-[#86868b] dark:text-white/30 font-light">
             Tap a plan above to see its full feature list.
           </p>
         </div>
@@ -294,10 +294,10 @@ const PricingPage = () => {
       {/* FAQ */}
       <section className="px-6 pb-32">
         <div className="max-w-[680px] mx-auto">
-          <h2 className="text-[clamp(28px,4vw,40px)] font-bold tracking-[-0.02em] text-white mb-2 text-center">
+          <h2 className="text-[clamp(28px,4vw,40px)] font-bold tracking-[-0.02em] text-[#1d1d1f] dark:text-white mb-2 text-center">
             Pricing questions
           </h2>
-          <p className="text-[15px] text-white/40 font-light text-center mb-10">
+          <p className="text-[15px] text-[#86868b] dark:text-white/40 font-light text-center mb-10">
             Quick answers to what teams ask us most.
           </p>
 
@@ -309,8 +309,8 @@ const PricingPage = () => {
                   key={i}
                   className={`rounded-[16px] border transition-all duration-300 ${
                     isOpen
-                      ? 'border-white/[0.08] bg-white/[0.03]'
-                      : 'border-transparent bg-white/[0.02] hover:bg-white/[0.04]'
+                      ? 'border-black/[0.10] dark:border-white/[0.08] bg-white dark:bg-white/[0.03]'
+                      : 'border-transparent bg-[#f5f5f7] dark:bg-white/[0.02] hover:bg-white dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   <button
@@ -320,14 +320,14 @@ const PricingPage = () => {
                   >
                     <span
                       className={`text-[15px] font-medium pr-4 transition-colors duration-300 ${
-                        isOpen ? 'text-[#0a84ff]' : 'text-white/80'
+                        isOpen ? 'text-[#0a84ff]' : 'text-[#1d1d1f] dark:text-white/80'
                       }`}
                     >
                       {f.q}
                     </span>
                     <span
                       className={`text-[12px] flex-shrink-0 transition-all duration-300 ${
-                        isOpen ? 'rotate-45 text-[#0a84ff]' : 'text-white/30'
+                        isOpen ? 'rotate-45 text-[#0a84ff]' : 'text-[#86868b] dark:text-white/30'
                       }`}
                     >
                       +
@@ -339,7 +339,7 @@ const PricingPage = () => {
                     }`}
                   >
                     <div className="px-6 pb-5">
-                      <p className="text-[14px] leading-[1.7] text-white/40 font-light">
+                      <p className="text-[14px] leading-[1.7] text-[#1d1d1f]/70 dark:text-white/40 font-light">
                         {f.a}
                       </p>
                     </div>
@@ -358,11 +358,9 @@ const PricingPage = () => {
 
 const Cell = ({
   value,
-  muted,
   highlight,
 }: {
   value: string | boolean;
-  muted?: boolean;
   highlight?: boolean;
 }) => {
   if (typeof value === 'boolean') {
@@ -371,9 +369,7 @@ const Cell = ({
         {value ? (
           <Check className={`w-4 h-4 ${highlight ? 'text-[#0a84ff]' : 'text-[#30d158]'}`} />
         ) : (
-          <span className={`text-[14px] ${muted ? 'text-white/20' : 'text-white/20'}`}>
-            —
-          </span>
+          <span className="text-[14px] text-[#86868b] dark:text-white/20">—</span>
         )}
       </div>
     );
@@ -381,7 +377,7 @@ const Cell = ({
   return (
     <div
       className={`text-center text-[13px] font-light ${
-        highlight ? 'text-white' : 'text-white/60'
+        highlight ? 'text-[#1d1d1f] dark:text-white' : 'text-[#1d1d1f]/70 dark:text-white/60'
       }`}
     >
       {value}

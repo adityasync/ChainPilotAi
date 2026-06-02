@@ -73,19 +73,19 @@ const ContactPage = () => {
   const canSubmit = name.trim() && email.trim() && message.trim();
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#fbfbfd] dark:bg-black text-[#1d1d1f] dark:text-white">
       <Navbar />
 
       {/* Hero */}
       <section
         ref={heroRef}
-        className="relative pt-40 pb-16 px-6 overflow-hidden bg-black"
+        className="relative pt-40 pb-16 px-6 overflow-hidden bg-[#fbfbfd] dark:bg-black"
       >
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-[radial-gradient(ellipse_at_center,rgba(48,209,88,0.10)_0%,transparent_70%)]" />
+          <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-[radial-gradient(ellipse_at_center,rgba(48,209,88,0.06)_0%,transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(48,209,88,0.10)_0%,transparent_70%)]" />
         </div>
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.03] hidden dark:block"
           style={{
             backgroundImage:
               'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
@@ -95,14 +95,14 @@ const ContactPage = () => {
 
         <div className="relative max-w-[860px] mx-auto text-center">
           <span
-            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] text-[11px] font-medium text-white/50 tracking-wide mb-8 transition-all duration-700 ease-out ${
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.08] bg-black/[0.03] dark:bg-white/[0.03] text-[11px] font-medium text-[#1d1d1f]/60 dark:text-white/50 tracking-wide mb-8 transition-all duration-700 ease-out ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
           >
             Contact
           </span>
           <h1
-            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-white leading-[1.05] mb-5 transition-all duration-700 ease-out delay-100 ${
+            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-[#1d1d1f] dark:text-white leading-[1.05] mb-5 transition-all duration-700 ease-out delay-100 ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
@@ -112,7 +112,7 @@ const ContactPage = () => {
             </span>
           </h1>
           <p
-            className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light max-w-[520px] mx-auto transition-all duration-700 ease-out delay-200 ${
+            className={`text-[clamp(17px,2vw,21px)] text-[#86868b] dark:text-white/40 font-light max-w-[520px] mx-auto transition-all duration-700 ease-out delay-200 ${
               heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
           >
@@ -127,7 +127,7 @@ const ContactPage = () => {
           {channels.map((c) => (
             <div
               key={c.title}
-              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-7 hover:bg-white/[0.03] transition-colors duration-300"
+              className="rounded-2xl border border-black/[0.08] dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-7 hover:bg-[#f5f5f7] dark:hover:bg-white/[0.03] transition-colors duration-300"
             >
               <div
                 className="inline-flex items-center justify-center w-11 h-11 rounded-xl mb-5"
@@ -138,10 +138,10 @@ const ContactPage = () => {
               >
                 <c.icon className="w-5 h-5" style={{ color: c.color }} />
               </div>
-              <h3 className="text-[15px] font-semibold text-white mb-2 tracking-[-0.01em]">
+              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white mb-2 tracking-[-0.01em]">
                 {c.title}
               </h3>
-              <p className="text-[13px] leading-[1.6] text-white/50 font-light mb-5">
+              <p className="text-[13px] leading-[1.6] text-[#1d1d1f]/70 dark:text-white/50 font-light mb-5">
                 {c.desc}
               </p>
               <a
@@ -159,16 +159,16 @@ const ContactPage = () => {
       {/* Form */}
       <section className="px-6 pb-16">
         <div className="max-w-[680px] mx-auto">
-          <div className="rounded-[24px] border border-white/[0.06] bg-white/[0.02] p-8 md:p-10">
+          <div className="rounded-[24px] border border-black/[0.08] dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-8 md:p-10">
             <div className="flex items-center gap-3 mb-6">
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#0a84ff]/15 border border-[#0a84ff]/30">
                 <Sparkles className="w-4 h-4 text-[#0a84ff]" />
               </div>
               <div>
-                <h2 className="text-[18px] font-semibold text-white tracking-[-0.01em]">
+                <h2 className="text-[18px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.01em]">
                   Send us a message
                 </h2>
-                <p className="text-[12px] text-white/40 font-light">
+                <p className="text-[12px] text-[#86868b] dark:text-white/40 font-light">
                   Opens your email client — we do not collect data on this page.
                 </p>
               </div>
@@ -192,24 +192,24 @@ const ContactPage = () => {
               </div>
 
               <div>
-                <label className="block text-[12px] font-medium text-white/50 mb-2">
+                <label className="block text-[12px] font-medium text-[#86868b] dark:text-white/50 mb-2">
                   Topic
                 </label>
                 <select
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-[14px] text-white focus:outline-none focus:border-white/[0.2] focus:bg-white/[0.06] transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:border-black/[0.2] dark:focus:border-white/[0.2] focus:bg-white dark:focus:bg-white/[0.06] transition-all [&_option]:bg-white [&_option]:dark:bg-[#1c1c1e]"
                 >
-                  <option className="bg-[#1c1c1e]">Support</option>
-                  <option className="bg-[#1c1c1e]">Sales</option>
-                  <option className="bg-[#1c1c1e]">Security</option>
-                  <option className="bg-[#1c1c1e]">Partnership</option>
-                  <option className="bg-[#1c1c1e]">Other</option>
+                  <option>Support</option>
+                  <option>Sales</option>
+                  <option>Security</option>
+                  <option>Partnership</option>
+                  <option>Other</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[12px] font-medium text-white/50 mb-2">
+                <label className="block text-[12px] font-medium text-[#86868b] dark:text-white/50 mb-2">
                   Message
                 </label>
                 <textarea
@@ -217,7 +217,7 @@ const ContactPage = () => {
                   onChange={(e) => setMessage(e.target.value)}
                   rows={5}
                   placeholder="Tell us what is on your mind…"
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/[0.2] focus:bg-white/[0.06] transition-all resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] text-[14px] text-[#1d1d1f] dark:text-white placeholder:text-[#86868b] dark:placeholder:text-white/30 focus:outline-none focus:border-black/[0.2] dark:focus:border-white/[0.2] focus:bg-white dark:focus:bg-white/[0.06] transition-all resize-none"
                 />
               </div>
 
@@ -225,7 +225,7 @@ const ContactPage = () => {
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="text-[12px] text-white/40 hover:text-white/70 transition-colors flex items-center justify-center sm:justify-start gap-1.5"
+                  className="text-[12px] text-[#86868b] dark:text-white/40 hover:text-[#1d1d1f] dark:hover:text-white/70 transition-colors flex items-center justify-center sm:justify-start gap-1.5"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   {copied ? 'Copied!' : 'Copy email address'}
@@ -233,7 +233,7 @@ const ContactPage = () => {
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-black text-[14px] font-medium hover:bg-white/90 active:scale-[0.97] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#1d1d1f] text-white dark:bg-white dark:text-black hover:bg-black dark:hover:bg-white/90 active:scale-[0.97] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Send className="w-3.5 h-3.5" />
                   Send message
@@ -246,15 +246,15 @@ const ContactPage = () => {
 
       {/* Response SLA */}
       <section className="px-6 pb-32">
-        <div className="max-w-[680px] mx-auto rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 flex items-start gap-4">
+        <div className="max-w-[680px] mx-auto rounded-2xl border border-black/[0.08] dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-6 flex items-start gap-4">
           <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#ff9f0a]/15 border border-[#ff9f0a]/30 flex-shrink-0">
             <AlertTriangle className="w-4 h-4 text-[#ff9f0a]" />
           </div>
           <div>
-            <h3 className="text-[14px] font-semibold text-white mb-1">
+            <h3 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white mb-1">
               Found a security issue?
             </h3>
-            <p className="text-[13px] leading-[1.6] text-white/50 font-light">
+            <p className="text-[13px] leading-[1.6] text-[#1d1d1f]/70 dark:text-white/50 font-light">
               Please do not post it publicly. Email{' '}
               <a
                 href="mailto:adityabuilds@outlook.com?subject=ChainPilot%20Security%20Report"
@@ -288,7 +288,7 @@ const Field = ({
   type?: string;
 }) => (
   <div>
-    <label className="block text-[12px] font-medium text-white/50 mb-2">
+    <label className="block text-[12px] font-medium text-[#86868b] dark:text-white/50 mb-2">
       {label}
     </label>
     <input
@@ -296,7 +296,7 @@ const Field = ({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/[0.2] focus:bg-white/[0.06] transition-all"
+      className="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] text-[14px] text-[#1d1d1f] dark:text-white placeholder:text-[#86868b] dark:placeholder:text-white/30 focus:outline-none focus:border-black/[0.2] dark:focus:border-white/[0.2] focus:bg-white dark:focus:bg-white/[0.06] transition-all"
     />
   </div>
 );

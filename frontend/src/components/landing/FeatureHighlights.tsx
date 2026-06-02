@@ -89,20 +89,20 @@ const FeatureHighlights = () => {
     <section
       id="features"
       ref={sectionRef}
-      className="py-[var(--space-section)] px-6 bg-black"
+      className="py-[var(--space-section)] px-6 bg-[#fbfbfd] dark:bg-black"
     >
       <div className="max-w-[1200px] mx-auto">
         {/* Section header */}
         <div className="text-center mb-16">
           <h2
-            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-white leading-[1.05] mb-4 transition-all duration-700 ease-out ${
+            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-[#1d1d1f] dark:text-white leading-[1.05] mb-4 transition-all duration-700 ease-out ${
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
             Highlights.
           </h2>
           <p
-            className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light max-w-[500px] mx-auto transition-all duration-700 ease-out delay-100 ${
+            className={`text-[clamp(17px,2vw,21px)] text-[#86868b] dark:text-white/40 font-light max-w-[500px] mx-auto transition-all duration-700 ease-out delay-100 ${
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
           >
@@ -123,8 +123,8 @@ const FeatureHighlights = () => {
               onClick={() => setActiveIndex(i)}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-medium transition-all duration-300 ${
                 i === activeIndex
-                  ? 'bg-white text-black'
-                  : 'bg-white/[0.06] text-white/50 hover:bg-white/[0.1] hover:text-white/70'
+                  ? 'bg-[#1d1d1f] text-white dark:bg-white dark:text-black'
+                  : 'bg-[#f5f5f7] text-[#86868b] hover:bg-[#e8e8ed] hover:text-[#1d1d1f] dark:bg-white/[0.06] dark:text-white/50 dark:hover:bg-white/[0.1] dark:hover:text-white/70'
               }`}
             >
               <h.icon className="w-3.5 h-3.5" />
@@ -139,7 +139,7 @@ const FeatureHighlights = () => {
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          <div className="relative rounded-[24px] overflow-hidden border border-white/[0.06] bg-[#1c1c1e]">
+          <div className="relative rounded-[24px] overflow-hidden border border-black/[0.08] dark:border-white/[0.06] bg-white dark:bg-[#1c1c1e]">
             {/* Background gradient */}
             <div
               className={`absolute inset-0 bg-gradient-to-br ${active.gradient} transition-all duration-700`}
@@ -149,24 +149,24 @@ const FeatureHighlights = () => {
               {/* Text content */}
               <div className="flex flex-col justify-center">
                 <div
-                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.04] text-[11px] font-medium tracking-wide mb-6 w-fit"
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-black/[0.08] dark:border-white/[0.08] bg-[#f5f5f7] dark:bg-white/[0.04] text-[11px] font-medium tracking-wide mb-6 w-fit"
                   style={{ color: active.color }}
                 >
                   <active.icon className="w-3 h-3" />
                   {active.title}
                 </div>
 
-                <h3 className="text-[clamp(28px,4vw,48px)] font-bold tracking-[-0.03em] text-white leading-[1.1] mb-4">
+                <h3 className="text-[clamp(28px,4vw,48px)] font-bold tracking-[-0.03em] text-[#1d1d1f] dark:text-white leading-[1.1] mb-4">
                   {active.subtitle}
                 </h3>
 
-                <p className="text-[17px] leading-[1.6] text-white/50 font-light max-w-[440px]">
+                <p className="text-[17px] leading-[1.6] text-[#86868b] dark:text-white/50 font-light max-w-[440px]">
                   {active.description}
                 </p>
 
                 <div className="mt-8">
                   <a
-                    href="#how-it-works"
+                    href="/#how-it-works"
                     className="inline-flex items-center gap-2 text-[14px] font-medium hover:gap-3 transition-all duration-300"
                     style={{ color: active.color }}
                   >
@@ -236,8 +236,8 @@ const FeatureHighlights = () => {
               onClick={() => setActiveIndex(i)}
               className={`group p-4 rounded-[16px] border transition-all duration-500 text-left ${
                 i === activeIndex
-                  ? 'bg-white/[0.06] border-white/[0.1]'
-                  : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.08]'
+                  ? 'bg-white border-black/[0.12] dark:bg-white/[0.06] dark:border-white/[0.1]'
+                  : 'bg-[#f5f5f7] border-black/[0.04] hover:bg-[#e8e8ed] hover:border-black/[0.08] dark:bg-white/[0.02] dark:border-white/[0.04] dark:hover:bg-white/[0.04] dark:hover:border-white/[0.08]'
               } ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
               style={{ transitionDelay: `${400 + i * 60}ms` }}
             >
@@ -254,12 +254,12 @@ const FeatureHighlights = () => {
               </div>
               <p
                 className={`text-[12px] font-semibold mb-1 transition-colors duration-300 ${
-                  i === activeIndex ? 'text-white' : 'text-white/60'
+                  i === activeIndex ? 'text-[#1d1d1f] dark:text-white' : 'text-[#1d1d1f]/60 dark:text-white/60'
                 }`}
               >
                 {h.title}
               </p>
-              <p className="text-[11px] text-white/30 leading-relaxed">{h.subtitle}</p>
+              <p className="text-[11px] text-[#86868b] dark:text-white/30 leading-relaxed">{h.subtitle}</p>
             </button>
           ))}
         </div>

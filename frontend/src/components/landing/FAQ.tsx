@@ -45,19 +45,19 @@ const FAQ = () => {
   }, []);
 
   return (
-    <section ref={ref} className="py-[var(--space-section)] px-6 bg-black">
+    <section ref={ref} className="py-[var(--space-section)] px-6 bg-[#fbfbfd] dark:bg-black">
       <div className="max-w-[720px] mx-auto">
         {/* Section header */}
         <div className="text-center mb-14">
           <h2
-            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-white leading-[1.05] mb-4 transition-all duration-700 ease-out ${
+            className={`text-[clamp(40px,7vw,72px)] font-bold tracking-[-0.04em] text-[#1d1d1f] dark:text-white leading-[1.05] mb-4 transition-all duration-700 ease-out ${
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
             Questions.
           </h2>
           <p
-            className={`text-[clamp(17px,2vw,21px)] text-white/40 font-light transition-all duration-700 ease-out delay-100 ${
+            className={`text-[clamp(17px,2vw,21px)] text-[#86868b] dark:text-white/40 font-light transition-all duration-700 ease-out delay-100 ${
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
           >
@@ -74,8 +74,8 @@ const FAQ = () => {
                 key={i}
                 className={`rounded-[16px] border transition-all duration-300 ${
                   isOpen
-                    ? 'border-white/[0.08] bg-white/[0.03]'
-                    : 'border-transparent bg-white/[0.02] hover:bg-white/[0.04]'
+                    ? 'border-black/[0.08] bg-white dark:border-white/[0.08] dark:bg-white/[0.03]'
+                    : 'border-transparent bg-[#f5f5f7] hover:bg-[#e8e8ed] dark:bg-white/[0.02] dark:hover:bg-white/[0.04]'
                 } ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 style={{ transitionDelay: `${100 + i * 60}ms` }}
               >
@@ -86,7 +86,7 @@ const FAQ = () => {
                 >
                   <span
                     className={`text-[15px] font-medium pr-4 transition-colors duration-300 ${
-                      isOpen ? 'text-[#0a84ff]' : 'text-white/80'
+                      isOpen ? 'text-[#0a84ff]' : 'text-[#1d1d1f] dark:text-white/80'
                     }`}
                   >
                     {faq.q}
@@ -95,7 +95,7 @@ const FAQ = () => {
                     className={`w-4 h-4 flex-shrink-0 transition-all duration-300 ${
                       isOpen
                         ? 'rotate-180 text-[#0a84ff]'
-                        : 'text-white/20'
+                        : 'text-[#86868b] dark:text-white/20'
                     }`}
                   />
                 </button>
@@ -105,7 +105,7 @@ const FAQ = () => {
                   }`}
                 >
                   <div className="px-6 pb-5">
-                    <p className="text-[14px] leading-[1.7] text-white/40 font-light">
+                    <p className="text-[14px] leading-[1.7] text-[#86868b] dark:text-white/40 font-light">
                       {faq.a}
                     </p>
                   </div>
